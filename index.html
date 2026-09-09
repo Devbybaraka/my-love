@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My fav Girl💕</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #fff8fb;
+      --bg-2: #ffeef5;
+      --pink: #ff9fbf;
+      --rose: #ff7aa2;
+      --cream: #fff4da;
+      --text: #6b3d55;
+      --muted: #9a6682;
+      --border: rgba(255, 125, 162, 0.2);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      color: var(--text);
+      background: linear-gradient(135deg, var(--bg), var(--bg-2));
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .heart-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .floating-heart {
+      position: absolute;
+      font-size: 1.4rem;
+      opacity: 0.25;
+      animation: floatUp 10s linear infinite;
+      will-change: transform, opacity;
+    }
+
+    .floating-heart:nth-child(odd) { animation-duration: 11s; }
+    .floating-heart:nth-child(3n) { animation-duration: 13s; }
+    .floating-heart:nth-child(5n) { animation-duration: 9s; }
+
+    @keyframes floatUp {
+      0% { transform: translate3d(0, 110vh, 0) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.35; }
+      100% { transform: translate3d(10px, -20vh, 0) rotate(360deg); opacity: 0; }
+    }
+
+    .page-shell {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid var(--border);
+      box-shadow: 0 18px 45px rgba(255, 125, 162, 0.18);
+      backdrop-filter: blur(12px);
+      border-radius: 28px;
+      padding: 32px 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .hero-split {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      text-align: left;
+    }
+
+    .hero-img-col {
+      flex: 0 0 42%;
+      max-width: 42%;
+    }
+
+    .hero-img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      object-position: top center;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(255, 125, 162, 0.25);
+      border: 2px solid white;
+      display: block;
+    }
+
+    .hero-text-col {
+      flex: 1;
+    }
+
+    .tagline {
+      margin: 0 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-size: 0.75rem;
+      color: var(--rose);
+      font-weight: 700;
+    }
+
+    h1 {
+      font-family: 'Fredoka', sans-serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      margin: 0 0 12px;
+      color: var(--rose);
+      line-height: 1.2;
+      animation: pulseTitle 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseTitle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .intro-text {
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    .note-box {
+      background: linear-gradient(135deg, rgba(255, 240, 247, 0.95), rgba(255, 248, 238, 0.95));
+      border-radius: 20px;
+      padding: 22px;
+      border: 1px solid rgba(255, 125, 162, 0.25);
+      color: var(--text);
+      font-size: 1.05rem;
+      line-height: 1.8;
+      text-align: left;
+      box-shadow: inset 0 2px 8px rgba(255, 125, 162, 0.05);
+      margin-top: 20px;
+    }
+
+    .note-box strong {
+      color: var(--rose);
+      font-size: 1.1rem;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+
+    .reasons-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .flip-card {
+      perspective: 1000px;
+      height: 120px;
+      cursor: pointer;
+    }
+
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+
+    .flip-card:hover .flip-card-inner,
+    .flip-card.flipped .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-card-front, .flip-card-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      padding: 12px;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 125, 162, 0.2);
+    }
+
+    .flip-card-front {
+      background: white;
+      color: var(--rose);
+      font-weight: 600;
+      font-size: 1.8rem;
+    }
+
+    .flip-card-back {
+      transform: rotateY(180deg);
+      background: linear-gradient(135deg, var(--cream), #fff2f6);
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .tap-hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 10px;
+      font-style: italic;
+    }
+
+    .heart-burst {
+      position: fixed;
+      pointer-events: none;
+      font-size: 1.5rem;
+      animation: burst 1s ease-out forwards;
+      z-index: 999;
+    }
+
+    @keyframes burst {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+      100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.4); opacity: 0; }
+    }
+
+    /* Responsive Design adjustments */
+    @media (max-width: 900px) {
+      .card {
+        padding: 28px 18px;
+      }
+
+      .hero-split {
+        gap: 16px;
+      }
+
+      .hero-img-col {
+        flex-basis: 38%;
+        max-width: 38%;
+      }
+    }
+
+    @media (max-width: 680px) {
+      body {
+        padding: 16px 12px;
+      }
+
+      .card {
+        padding: 22px 16px;
+        border-radius: 22px;
+      }
+
+      .hero-split {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .hero-img-col {
+        flex-basis: 100%;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .hero-img {
+        height: 320px;
+        object-position: top center;
+      }
+
+      .reasons-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .flip-card {
+        height: 80px;
+      }
+
+      .modal-card {
+        padding: 22px 16px;
+        border-radius: 20px;
+      }
+
+      .modal-buttons {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+      }
+
+      .modal-btn {
+        width: 100%;
+        max-width: 100%;
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        border-radius: 14px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .tagline {
+        letter-spacing: 0.12em;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      .intro-text,
+      .note-box,
+      .modal-body {
+        font-size: 0.88rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Hearts -->
+  <div class="heart-bg" aria-hidden="true">
+    <span class="floating-heart" style="left: 6%; top: 12%;">💗</span>
+    <span class="floating-heart" style="left: 18%; top: 30%;">💖</span>
+    <span class="floating-heart" style="left: 32%; top: 8%;">💕</span>
+    <span class="floating-heart" style="left: 54%; top: 18%;">💞</span>
+    <span class="floating-heart" style="left: 70%; top: 9%;">💗</span>
+    <span class="floating-heart" style="left: 86%; top: 24%;">💖</span>
+    <span class="floating-heart" style="left: 10%; top: 72%;">💕</span>
+    <span class="floating-heart" style="left: 40%; top: 80%;">💗</span>
+    <span class="floating-heart" style="left: 78%; top: 70%;">💖</span>
+    <span class="floating-heart" style="left: 92%; top: 82%;">💞</span>
+  </div>
+
+  <main class="page-shell">
+    
+    <section class="card">
+      <div class="hero-split">
+        <div class="hero-img-col">
+          <img src="IMG-20260716-WA0018.jpg" alt="Her Photo" class="hero-img" />
+        </div>
+        <div class="hero-text-col">
+          <p class="tagline">A little note for you</p>
+          <h1>For My Favorite Person 💕</h1>
+          <p class="intro-text">
+            You are the softest laughter in my day, the sweetest light in my heart, and the most beautiful reason I smile. Every moment with you feels like a little spark of magic.
+          </p>
+        </div>
+      </div>
+
+      <div class="note-box">
+        <strong>From my heart:</strong><br />
+        Hey, I know this may not be much, but one thing is true: I love you very much, and that is never gonna change. I love you so, so much. ❤️
+      </div>
+    </section>
+
+    <section class="card" style="padding-top: 20px;">
+      <p class="tagline" style="margin-bottom: 4px;">Tap each card</p>
+      <div class="reasons-grid">
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">✨</div>
+            <div class="flip-card-back">Your smile makes every day better.</div>
+          </div>
+        </div>
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">🌸</div>
+            <div class="flip-card-back">Thank you for being you.</div>
+          </div>
+        </div>
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">💖</div>
+            <div class="flip-card-back">Always my favorite person.</div>
+          </div>
+        </div>
+      </div>
+      <p class="tap-hint">(Tap anywhere on the screen for a little surprise)</p>
+    </section>
+
+    <!-- Final Note -->
+    <section class="card" style="margin-bottom: 0;">
+      <div class="note-box" style="text-align: center; border: none; background: transparent; padding: 0; margin-top: 0;">
+        <strong>Just a little reminder ✨</strong><br />
+        You are cherished, adored, and loved more than words can say. Keep being exactly who you are — beautiful, kind, and unforgettable.
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.modal-card')) return;
+
+      const hearts = ['💖', '💗', '💕', '✨', '🌸'];
+      for (let i = 0; i < 6; i++) {
+        const heart = document.createElement('div');
+        heart.className = 'heart-burst';
+        heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+        heart.style.left = `${e.clientX}px`;
+        heart.style.top = `${e.clientY}px`;
+        
+        const dx = (Math.random() - 0.5) * 120;
+        const dy = (Math.random() - 0.5) * 120 - 40;
+        heart.style.setProperty('--dx', `${dx}px`);
+        heart.style.setProperty('--dy', `${dy}px`);
+
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 1000);
+      }
+    });
+  </script>
+</body>
+</html>
