@@ -3,20 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My fav Girl💕</title>
+  <title>For You 💌</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Caveat:wght@500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #fff8fb;
-      --bg-2: #ffeef5;
-      --pink: #ff9fbf;
-      --rose: #ff7aa2;
-      --cream: #fff4da;
-      --text: #6b3d55;
-      --muted: #9a6682;
-      --border: rgba(255, 125, 162, 0.2);
+      --ivory: #fffbf6;
+      --ivory-2: #fcf2ea;
+      --paper: #fffdf9;
+      --blush: #f3d9df;
+      --blush-deep: #e6b9c4;
+      --rose: #a23e55;
+      --rose-deep: #7a2b41;
+      --gold: #c9a227;
+      --gold-soft: #e7cd84;
+      --ink: #4a2e39;
+      --muted: #8c6b78;
     }
 
     * { box-sizing: border-box; }
@@ -24,18 +27,19 @@
     body {
       margin: 0;
       font-family: 'Poppins', sans-serif;
-      color: var(--text);
-      background: linear-gradient(135deg, var(--bg), var(--bg-2));
+      color: var(--ink);
+      background: linear-gradient(160deg, var(--ivory), var(--ivory-2));
       min-height: 100vh;
       overflow-x: hidden;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px 16px;
+      padding: clamp(16px, 4vw, 40px) 16px;
     }
 
-    .heart-bg {
+    /* Background Petals */
+    .petal-bg {
       position: fixed;
       inset: 0;
       pointer-events: none;
@@ -43,375 +47,548 @@
       z-index: 0;
     }
 
-    .floating-heart {
+    .petal {
       position: absolute;
-      font-size: 1.4rem;
-      opacity: 0.25;
-      animation: floatUp 10s linear infinite;
+      font-size: 1.1rem;
+      opacity: 0.22;
+      color: var(--rose);
+      animation: drift 16s linear infinite;
       will-change: transform, opacity;
     }
 
-    .floating-heart:nth-child(odd) { animation-duration: 11s; }
-    .floating-heart:nth-child(3n) { animation-duration: 13s; }
-    .floating-heart:nth-child(5n) { animation-duration: 9s; }
+    .petal:nth-child(odd) { animation-duration: 19s; }
+    .petal:nth-child(3n) { animation-duration: 22s; color: var(--gold); }
 
-    @keyframes floatUp {
+    @keyframes drift {
       0% { transform: translate3d(0, 110vh, 0) rotate(0deg); opacity: 0; }
-      10% { opacity: 0.35; }
-      100% { transform: translate3d(10px, -20vh, 0) rotate(360deg); opacity: 0; }
+      12% { opacity: 0.28; }
+      100% { transform: translate3d(14px, -15vh, 0) rotate(200deg); opacity: 0; }
     }
 
+    /* Page Container */
     .page-shell {
       position: relative;
       z-index: 1;
       width: 100%;
-      max-width: 680px;
+      max-width: 620px;
       margin: 0 auto;
     }
 
-    .card {
-      background: rgba(255, 255, 255, 0.85);
-      border: 1px solid var(--border);
-      box-shadow: 0 18px 45px rgba(255, 125, 162, 0.18);
-      backdrop-filter: blur(12px);
-      border-radius: 28px;
-      padding: 32px 24px;
-      margin-bottom: 20px;
-      text-align: center;
+    .stationery {
+      position: relative;
+      background: var(--paper);
+      border: 1px solid var(--blush-deep);
+      border-radius: clamp(18px, 4vw, 26px);
+      box-shadow: 0 22px 55px rgba(122, 43, 65, 0.16);
+      padding: clamp(24px, 5vw, 44px) clamp(16px, 4vw, 34px);
     }
 
-    .hero-split {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      text-align: left;
+    .stationery::after {
+      content: '';
+      position: absolute;
+      inset: clamp(8px, 2vw, 12px);
+      border: 1px solid rgba(230, 185, 196, 0.55);
+      border-radius: clamp(12px, 3vw, 18px);
+      pointer-events: none;
     }
 
-    .hero-img-col {
-      flex: 0 0 42%;
-      max-width: 42%;
-    }
-
-    .hero-img {
-      width: 100%;
-      height: 300px;
-      object-fit: cover;
-      object-position: top center;
-      border-radius: 20px;
-      box-shadow: 0 8px 20px rgba(255, 125, 162, 0.25);
-      border: 2px solid white;
-      display: block;
-    }
-
-    .hero-text-col {
-      flex: 1;
-    }
-
-    .tagline {
-      margin: 0 0 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.2em;
-      font-size: 0.75rem;
+    .whisper {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 1rem;
       color: var(--rose);
-      font-weight: 700;
+      text-align: center;
+      margin: 0 0 6px;
     }
 
     h1 {
-      font-family: 'Fredoka', sans-serif;
-      font-size: clamp(1.6rem, 4vw, 2.4rem);
-      margin: 0 0 12px;
-      color: var(--rose);
-      line-height: 1.2;
-      animation: pulseTitle 2s ease-in-out infinite;
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+      font-size: clamp(1.5rem, 5vw, 2.4rem);
+      line-height: 1.3;
+      color: var(--rose-deep);
+      text-align: center;
+      margin: 0 0 28px;
     }
 
-    @keyframes pulseTitle {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.02); }
+    /* Envelope Interactive Container */
+    .envelope-card {
+      max-width: 320px;
+      margin: 0 auto;
+      text-align: center;
     }
 
-    .intro-text {
-      font-size: 0.92rem;
-      color: var(--muted);
-      margin: 0;
-      line-height: 1.6;
+    .envelope-shell {
+      max-height: 280px;
+      opacity: 1;
+      overflow: hidden;
+      margin-bottom: 16px;
+      cursor: pointer;
+      border-radius: 16px;
+      padding: 8px;
+      transition: opacity 0.4s ease, max-height 0.4s ease, margin-bottom 0.4s ease, background-color 0.2s ease;
+      touch-action: manipulation;
     }
 
-    .note-box {
-      background: linear-gradient(135deg, rgba(255, 240, 247, 0.95), rgba(255, 248, 238, 0.95));
-      border-radius: 20px;
-      padding: 22px;
-      border: 1px solid rgba(255, 125, 162, 0.25);
-      color: var(--text);
-      font-size: 1.05rem;
-      line-height: 1.8;
-      text-align: left;
-      box-shadow: inset 0 2px 8px rgba(255, 125, 162, 0.05);
-      margin-top: 20px;
+    .envelope-shell:hover, .envelope-shell:focus-visible {
+      background-color: rgba(243, 217, 223, 0.25);
     }
 
-    .note-box strong {
-      color: var(--rose);
+    .envelope-card.opened .envelope-shell {
+      opacity: 0;
+      max-height: 0;
+      margin-bottom: 0;
+      pointer-events: none;
+      transition-delay: 0.55s;
+    }
+
+    .envelope-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      perspective: 1000px;
+      width: 100%;
+    }
+
+    .envelope-btn:focus-visible { outline: none; }
+
+    .envelope {
+      position: relative;
+      width: min(250px, 80vw);
+      height: min(164px, 52vw);
+      margin: 0 auto;
+    }
+
+    .envelope-back {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg, var(--paper), var(--ivory-2));
+      border: 1px solid var(--blush-deep);
+      border-radius: 8px;
+      box-shadow: 0 16px 30px rgba(122, 43, 65, 0.18);
+    }
+
+    .envelope-front {
+      position: absolute;
+      left: 0; right: 0; bottom: 0; top: 40%;
+      background: var(--paper);
+      border: 1px solid var(--blush-deep);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      clip-path: polygon(0 0, 50% 48%, 100% 0, 100% 100%, 0 100%);
+      z-index: 2;
+    }
+
+    .envelope-flap {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 60%;
+      background: linear-gradient(150deg, var(--blush), var(--blush-deep));
+      clip-path: polygon(0 0, 100% 0, 50% 90%);
+      border-radius: 8px 8px 0 0;
+      transform-origin: top center;
+      transition: transform 0.55s ease 0.15s, opacity 0.55s ease 0.15s;
+      z-index: 3;
+    }
+
+    .envelope-card.opened .envelope-flap {
+      transform: rotateX(180deg);
+      opacity: 0;
+    }
+
+    .wax-seal {
+      position: absolute;
+      top: 40%; left: 50%;
+      width: 44px; height: 44px;
+      margin: -22px 0 0 -22px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, var(--gold-soft), var(--rose-deep) 75%);
+      box-shadow: 0 3px 8px rgba(90, 30, 45, 0.35), inset 0 -3px 5px rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ivory);
       font-size: 1.1rem;
-      display: inline-block;
-      margin-bottom: 6px;
+      z-index: 4;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .envelope-card.opened .wax-seal {
+      opacity: 0;
+      transform: scale(0.5) rotate(20deg) translateY(-6px);
+    }
+
+    .tap-hint {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 1rem;
+      color: var(--muted);
+      margin: 12px 0 0;
+    }
+
+    /* Letter Body Content */
+    .letter-content {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin-top: 0;
+      text-align: left;
+      transition: opacity 0.5s ease, max-height 0.6s ease, margin-top 0.4s ease;
+    }
+
+    .envelope-card.opened .letter-content {
+      max-height: 1600px;
+      opacity: 1;
+      margin-top: 20px;
+      transition-delay: 0.65s;
+    }
+
+    .polaroid {
+      background: #fff;
+      padding: 10px 10px 28px;
+      border-radius: 4px;
+      box-shadow: 0 10px 22px rgba(122, 43, 65, 0.18);
+      transform: rotate(-2deg);
+      width: min(160px, 45vw);
+      margin: 0 auto 22px;
+      position: relative;
+    }
+
+    .polaroid img {
+      width: 100%;
+      height: min(180px, 50vw);
+      object-fit: cover;
+      object-position: top center;
+      border-radius: 2px;
+      display: block;
+    }
+
+    .polaroid-fallback {
+      display: none;
+      width: 100%;
+      height: min(180px, 50vw);
+      border-radius: 2px;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      background: linear-gradient(160deg, var(--blush), var(--ivory-2));
+    }
+
+    .polaroid.img-fallback .polaroid-fallback { display: flex; }
+    .polaroid.img-fallback img { display: none; }
+
+    .polaroid-caption {
+      position: absolute;
+      bottom: 6px; left: 0; right: 0;
+      text-align: center;
+      font-family: 'Caveat', cursive;
+      font-size: 1.15rem;
+      color: var(--rose-deep);
+    }
+
+    .letter-salutation {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 1.4rem;
+      color: var(--rose-deep);
+      margin: 0 0 14px;
+    }
+
+    .letter-body {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.05rem, 3.5vw, 1.2rem);
+      line-height: 1.8;
+      color: var(--ink);
+      margin: 0 0 16px;
+    }
+
+    .letter-sign {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 22px;
+    }
+
+    .letter-sign .script {
+      display: block;
+      font-family: 'Caveat', cursive;
+      font-size: 1.7rem;
+      color: var(--rose-deep);
+      margin-top: 4px;
+    }
+
+    /* Dividers */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 32px 0;
+      color: var(--gold);
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--blush-deep), transparent);
+    }
+
+    /* Responsive Interactive Cards */
+    .reasons-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 1.3rem;
+      color: var(--rose-deep);
+      text-align: center;
+      margin: 0 0 20px;
     }
 
     .reasons-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-top: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
     }
 
     .flip-card {
       perspective: 1000px;
-      height: 120px;
+      min-height: 130px;
       cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .flip-card-inner {
       position: relative;
       width: 100%;
       height: 100%;
+      min-height: 130px;
       text-align: center;
       transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       transform-style: preserve-3d;
     }
 
-    .flip-card:hover .flip-card-inner,
-    .flip-card.flipped .flip-card-inner {
+    /* Desktop hover or mobile class toggle */
+    @media (hover: hover) {
+      .flip-card:hover .flip-card-inner {
+        transform: rotateY(180deg);
+      }
+    }
+
+    .flip-card.flipped .flip-card-inner,
+    .flip-card:focus-visible .flip-card-inner {
       transform: rotateY(180deg);
+    }
+
+    .flip-card:focus-visible {
+      outline: 2px solid var(--gold);
+      border-radius: 14px;
     }
 
     .flip-card-front, .flip-card-back {
       position: absolute;
       inset: 0;
-      border-radius: 18px;
-      padding: 12px;
+      border-radius: 14px;
+      padding: 14px 12px;
       backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid rgba(255, 125, 162, 0.2);
+      border: 1px solid var(--blush-deep);
+      box-shadow: 0 4px 12px rgba(122, 43, 65, 0.05);
     }
 
     .flip-card-front {
-      background: white;
-      color: var(--rose);
-      font-weight: 600;
-      font-size: 1.8rem;
+      background: var(--paper);
+      color: var(--rose-deep);
+      font-size: 1.6rem;
     }
 
     .flip-card-back {
       transform: rotateY(180deg);
-      background: linear-gradient(135deg, var(--cream), #fff2f6);
-      color: var(--text);
-      font-size: 0.85rem;
-      font-weight: 500;
-      line-height: 1.4;
-    }
-
-    .tap-hint {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 10px;
+      background: linear-gradient(150deg, var(--blush), var(--ivory-2));
+      color: var(--ink);
+      font-family: 'Cormorant Garamond', serif;
       font-style: italic;
+      font-size: 1.05rem;
+      line-height: 1.45;
     }
 
-    .heart-burst {
+    /* Comfort Note */
+    .comfort-note { text-align: center; }
+
+    .comfort-note p {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1.05rem, 3.5vw, 1.2rem);
+      line-height: 1.8;
+      color: var(--ink);
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .comfort-note .heart-mark {
+      display: block;
+      margin-top: 14px;
+      font-size: 1.3rem;
+      color: var(--rose-deep);
+    }
+
+    /* Sparkle Burst */
+    .spark {
       position: fixed;
       pointer-events: none;
-      font-size: 1.5rem;
-      animation: burst 1s ease-out forwards;
+      font-size: 1.1rem;
+      color: var(--rose);
+      animation: spark-burst 0.9s ease-out forwards;
       z-index: 999;
     }
 
-    @keyframes burst {
+    @keyframes spark-burst {
       0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-      100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.4); opacity: 0; }
+      100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2); opacity: 0; }
     }
 
-    /* Responsive Design adjustments */
-    @media (max-width: 900px) {
-      .card {
-        padding: 28px 18px;
-      }
-
-      .hero-split {
-        gap: 16px;
-      }
-
-      .hero-img-col {
-        flex-basis: 38%;
-        max-width: 38%;
-      }
-    }
-
-    @media (max-width: 680px) {
-      body {
-        padding: 16px 12px;
-      }
-
-      .card {
-        padding: 22px 16px;
-        border-radius: 22px;
-      }
-
-      .hero-split {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      .hero-img-col {
-        flex-basis: 100%;
-        max-width: 100%;
-        width: 100%;
-      }
-
-      .hero-img {
-        height: 320px;
-        object-position: top center;
-      }
-
+    /* Mobile Adaptations */
+    @media (max-width: 500px) {
       .reasons-grid {
         grid-template-columns: 1fr;
-        gap: 10px;
       }
-
-      .flip-card {
-        height: 80px;
-      }
-
-      .modal-card {
-        padding: 22px 16px;
-        border-radius: 20px;
-      }
-
-      .modal-buttons {
-        flex-direction: column;
-        gap: 10px;
-        width: 100%;
-      }
-
-      .modal-btn {
-        width: 100%;
-        max-width: 100%;
-        padding: 12px 16px;
-        font-size: 0.9rem;
-        border-radius: 14px;
+      
+      .flip-card, .flip-card-inner {
+        min-height: 90px;
       }
     }
 
-    @media (max-width: 420px) {
-      .tagline {
-        letter-spacing: 0.12em;
-      }
-
-      h1 {
-        font-size: 1.8rem;
-      }
-
-      .intro-text,
-      .note-box,
-      .modal-body {
-        font-size: 0.88rem;
+    /* Accessibility / Motion Settings */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Background Hearts -->
-  <div class="heart-bg" aria-hidden="true">
-    <span class="floating-heart" style="left: 6%; top: 12%;">💗</span>
-    <span class="floating-heart" style="left: 18%; top: 30%;">💖</span>
-    <span class="floating-heart" style="left: 32%; top: 8%;">💕</span>
-    <span class="floating-heart" style="left: 54%; top: 18%;">💞</span>
-    <span class="floating-heart" style="left: 70%; top: 9%;">💗</span>
-    <span class="floating-heart" style="left: 86%; top: 24%;">💖</span>
-    <span class="floating-heart" style="left: 10%; top: 72%;">💕</span>
-    <span class="floating-heart" style="left: 40%; top: 80%;">💗</span>
-    <span class="floating-heart" style="left: 78%; top: 70%;">💖</span>
-    <span class="floating-heart" style="left: 92%; top: 82%;">💞</span>
+  <div class="petal-bg" aria-hidden="true">
+    <span class="petal" style="left: 8%; top: 15%;">❀</span>
+    <span class="petal" style="left: 22%; top: 65%;">♡</span>
+    <span class="petal" style="left: 38%; top: 30%;">✦</span>
+    <span class="petal" style="left: 58%; top: 75%;">❀</span>
+    <span class="petal" style="left: 74%; top: 20%;">♡</span>
+    <span class="petal" style="left: 90%; top: 55%;">✦</span>
   </div>
 
   <main class="page-shell">
-    
-    <section class="card">
-      <div class="hero-split">
-        <div class="hero-img-col">
-          <img src="IMG-20260716-WA0018.jpg" alt="Her Photo" class="hero-img" />
+    <div class="stationery">
+
+      <p class="whisper">for you, always</p>
+      <h1>A little letter to open when today feels like a lot</h1>
+
+      <div class="envelope-card" id="envelopeCard">
+        <div class="envelope-shell" id="envelopeShell" tabindex="0" role="button" aria-expanded="false" aria-controls="letterContent" aria-label="Tap to open the letter">
+          <button class="envelope-btn" tabindex="-1" aria-hidden="true">
+            <div class="envelope">
+              <div class="envelope-back"></div>
+              <div class="envelope-front"></div>
+              <div class="envelope-flap"></div>
+              <div class="wax-seal">♥</div>
+            </div>
+          </button>
+          <p class="tap-hint">tap or click the seal to open</p>
         </div>
-        <div class="hero-text-col">
-          <p class="tagline">A little note for you</p>
-          <h1>For My Favorite Person 💕</h1>
-          <p class="intro-text">
-            You are the softest laughter in my day, the sweetest light in my heart, and the most beautiful reason I smile. Every moment with you feels like a little spark of magic.
-          </p>
+
+        <div class="letter-content" id="letterContent" aria-hidden="true">
+          <div class="polaroid">
+            <img src="IMG-20260716-WA0018.jpg" alt="Photo"
+                 onerror="this.parentElement.classList.add('img-fallback')" />
+            <div class="polaroid-fallback">🤍</div>
+            <span class="polaroid-caption">you, always</span>
+          </div>
+
+          <p class="letter-salutation">My dearest,</p>
+          <p class="letter-body">I know lately it feels like there aren't enough hours in the day for us to spend together and you're carrying more than most people realize just know you are not alone im here for you always to hold you .  I wanted to make you something small i hope you like it. <br> Yesterday night I was thinking about how you said you feel bad. I don't know what it is, but I pray it gets better. You mean so much to me, and all I could ever ask for is to see a smile on your face—nothing more, nothing less </p>
+          <p class="letter-body">So take a breath. You're doing better than you think you are, and you are so deeply loved — today, and every heavy day after this one.</p>
+          <p class="letter-sign">With all my heart,<span class="script">always yours <br> NEWTON.</span></p>
         </div>
       </div>
 
-      <div class="note-box">
-        <strong>From my heart:</strong><br />
-        Hey, I know this may not be much, but one thing is true: I love you very much, and that is never gonna change. I love you so, so much. ❤️
-      </div>
-    </section>
+      <div class="divider" aria-hidden="true"><span>❦</span></div>
 
-    <section class="card" style="padding-top: 20px;">
-      <p class="tagline" style="margin-bottom: 4px;">Tap each card</p>
-      <div class="reasons-grid">
-        <div class="flip-card" onclick="this.classList.toggle('flipped')">
-          <div class="flip-card-inner">
-            <div class="flip-card-front">✨</div>
-            <div class="flip-card-back">Your smile makes every day better.</div>
+      <section>
+        <p class="reasons-heading">a few little truths</p>
+        <div class="reasons-grid">
+          <div class="flip-card" tabindex="0" role="button" aria-label="Truth 1: Your laugh" onclick="this.classList.toggle('flipped')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('flipped')}">
+            <div class="flip-card-inner">
+              <div class="flip-card-front">♡</div>
+              <div class="flip-card-back">You are the most amazing person I know. <br> Na those time i look at you unauliza mbona nakuangalia  im just admiring youre beauty.</div>
+            </div>
+          </div>
+          <div class="flip-card" tabindex="0" role="button" aria-label="Truth 2: Thoughts of you" onclick="this.classList.toggle('flipped')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('flipped')}">
+            <div class="flip-card-inner">
+              <div class="flip-card-front">✦</div>
+              <div class="flip-card-back">You are always in my mind. i love you so much.</div>
+            </div>
+          </div>
+          <div class="flip-card" tabindex="0" role="button" aria-label="Truth 3: Making days better" onclick="this.classList.toggle('flipped')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('flipped')}">
+            <div class="flip-card-inner">
+              <div class="flip-card-front">❀</div>
+              <div class="flip-card-back">If you need someone to talk to, I'm here for you.</div>
+            </div>
           </div>
         </div>
-        <div class="flip-card" onclick="this.classList.toggle('flipped')">
-          <div class="flip-card-inner">
-            <div class="flip-card-front">🌸</div>
-            <div class="flip-card-back">Thank you for being you.</div>
-          </div>
-        </div>
-        <div class="flip-card" onclick="this.classList.toggle('flipped')">
-          <div class="flip-card-inner">
-            <div class="flip-card-front">💖</div>
-            <div class="flip-card-back">Always my favorite person.</div>
-          </div>
-        </div>
-      </div>
-      <p class="tap-hint">(Tap anywhere on the screen for a little surprise)</p>
-    </section>
+      </section>
 
-    <!-- Final Note -->
-    <section class="card" style="margin-bottom: 0;">
-      <div class="note-box" style="text-align: center; border: none; background: transparent; padding: 0; margin-top: 0;">
-        <strong>Just a little reminder ✨</strong><br />
-        You are cherished, adored, and loved more than words can say. Keep being exactly who you are — beautiful, kind, and unforgettable.
-      </div>
-    </section>
+      <div class="divider" aria-hidden="true"><span>❦</span></div>
 
+      <section class="comfort-note">
+        <p>P.S. — I love you more than any of these words can hold and have a wonderful day!</p>
+        <span class="heart-mark">♡</span>
+      </section>
+
+    </div>
   </main>
 
   <script>
+    const envelopeCard = document.getElementById('envelopeCard');
+    const envelopeShell = document.getElementById('envelopeShell');
+    const letterContent = document.getElementById('letterContent');
+
+    function toggleEnvelope() {
+      const opened = envelopeCard.classList.toggle('opened');
+      envelopeShell.setAttribute('aria-expanded', String(opened));
+      letterContent.setAttribute('aria-hidden', String(!opened));
+    }
+
+    envelopeShell.addEventListener('click', toggleEnvelope);
+    envelopeShell.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleEnvelope();
+      }
+    });
+
     document.addEventListener('click', (e) => {
-      if (e.target.closest('.modal-card')) return;
+      if (e.target.closest('.envelope-card') || e.target.closest('.flip-card')) return;
 
-      const hearts = ['💖', '💗', '💕', '✨', '🌸'];
-      for (let i = 0; i < 6; i++) {
-        const heart = document.createElement('div');
-        heart.className = 'heart-burst';
-        heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
-        heart.style.left = `${e.clientX}px`;
-        heart.style.top = `${e.clientY}px`;
-        
-        const dx = (Math.random() - 0.5) * 120;
-        const dy = (Math.random() - 0.5) * 120 - 40;
-        heart.style.setProperty('--dx', `${dx}px`);
-        heart.style.setProperty('--dy', `${dy}px`);
+      const marks = ['♡', '✦', '❀', '♥'];
+      for (let i = 0; i < 4; i++) {
+        const spark = document.createElement('div');
+        spark.className = 'spark';
+        spark.textContent = marks[Math.floor(Math.random() * marks.length)];
+        spark.style.left = `${e.clientX}px`;
+        spark.style.top = `${e.clientY}px`;
 
-        document.body.appendChild(heart);
-        setTimeout(() => heart.remove(), 1000);
+        const dx = (Math.random() - 0.5) * 100;
+        const dy = (Math.random() - 0.5) * 100 - 30;
+        spark.style.setProperty('--dx', `${dx}px`);
+        spark.style.setProperty('--dy', `${dy}px`);
+
+        document.body.appendChild(spark);
+        setTimeout(() => spark.remove(), 900);
       }
     });
   </script>
