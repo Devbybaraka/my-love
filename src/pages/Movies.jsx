@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Poster from '../components/Poster';
-import { api, GENRES } from '../lib/api';
+import { api, GENRES, formatClock } from '../lib/api';
+import { listProgress, progressRatio } from '../lib/progress';
 
 const CATEGORIES = ['All', ...GENRES];
 
@@ -18,6 +19,20 @@ export default function Movies() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
+  const [resume, setResume] = useState([]);
+
+  // Half-watched things live on this device, so read them when the page opens.
+  useEffect(() => {
+    setResume(listProgress().slice(0, 4));
+  }, []);
+
+  const filmProgress = useMemo(() => {
+    const map = {};
+    listProgress().forEach((entry) => {
+      if (entry.kind === 'film') map[entry.id] = entry;
+    });
+    return map;
+  }, [resume]);
 
   const load = () => {
     setStatus('loading');
@@ -74,6 +89,36 @@ export default function Movies() {
           Every film in here is one I want to watch with you — your head on my
           shoulder, my hand in yours, the world on pause for two hours.
         </p>
+
+        {resume.length > 0 && (
+          <section className="mt-8">
+            <p className="mb-3 text-[9px] uppercase tracking-[0.34em] text-gold/80">
+              keep going
+            </p>
+            <div className="no-bar -mx-5 flex gap-3 overflow-x-auto px-5 pb-1 sm:mx-0 sm:px-0">
+              {resume.map((entry) => (
+                <Link
+                  key={entry.key}
+                  to={entry.href}
+                  className="group w-[210px] shrink-0 rounded-2xl border border-white/10 bg-black/20 p-4 transition hover:border-rose/40"
+                >
+                  <p className="truncate font-display text-[15px] text-cream/85 transition group-hover:text-rose-soft">
+                    {entry.title || 'Untitled'}
+                  </p>
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.2em] text-cream/30">
+                    {formatClock(entry.t)} watched
+                  </p>
+                  <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-rose/70"
+                      style={{ width: `${Math.round(progressRatio(entry) * 100)}%` }}
+                    />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* search + filters */}
         <div className="mt-9 space-y-4">
@@ -194,6 +239,16 @@ export default function Movies() {
                   >
                     <div className="relative">
                       <Poster movie={item} className="aspect-[2/3]" />
+                      {!isSeries && filmProgress[item.id] && (
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-black/60">
+                          <div
+                            className="h-full bg-rose/80"
+                            style={{
+                              width: `${Math.round(progressRatio(filmProgress[item.id]) * 100)}%`,
+                            }}
+                          />
+                        </div>
+                      )}
                       {isSeries && (
                         <span className="absolute left-3 top-3 rounded-full border border-rose/40 bg-ink/85 px-2.5 py-1 text-[8px] uppercase tracking-[0.24em] text-rose-soft backdrop-blur">
                           series

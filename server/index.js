@@ -8,6 +8,16 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { pool, initSchema } from './db.js';
 import { cloudinaryReady, uploadFromPath, deleteByUrl } from './cloudinary.js';
+import {
+  accessRequired,
+  wordIsRight,
+  setDoorCookie,
+  clearDoorCookie,
+  hasDoor,
+  requireAccess,
+} from './access.js';
+import { rateLimit } from './rateLimit.js';
+import { notifyNewThing, notificationsReady } from './notify.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -100,14 +110,43 @@ app.get('/api/health', async (_req, res) => {
       db: rows[0].now,
       cloudinary: cloudinaryReady,
       storage: cloudinaryReady ? 'cloudinary' : 'disk',
+      door: accessRequired,
+      notify: notificationsReady,
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
 });
 
+/* ----------------------------- the door ----------------------------- */
+// One word (SITE_PASSCODE, falling back to UPLOAD_PASSCODE) opens the whole
+// site. Wrong guesses are throttled per IP.
+const doorAttempts = rateLimit({
+  max: 8,
+  windowMs: 15 * 60 * 1000,
+  message: 'Too many tries. Wait a few minutes, then try the word again.',
+});
+
+app.get('/api/access', (req, res) => {
+  res.json({ required: accessRequired, ok: hasDoor(req) });
+});
+
+app.post('/api/access', doorAttempts, (req, res) => {
+  const word = (req.body || {}).passphrase || '';
+  if (!wordIsRight(word)) {
+    return res.status(401).json({ error: 'That word is not the one we picked.', locked: true });
+  }
+  setDoorCookie(req, res);
+  res.json({ ok: true });
+});
+
+app.delete('/api/access', (req, res) => {
+  clearDoorCookie(req, res);
+  res.json({ ok: true });
+});
+
 /* ---------------------------- movies ---------------------------- */
-app.get('/api/movies', async (_req, res, next) => {
+app.get('/api/movies', requireAccess, async (_req, res, next) => {
   try {
     const { rows } = await pool.query(
       'SELECT * FROM movies ORDER BY created_at DESC, id DESC'
@@ -118,7 +157,7 @@ app.get('/api/movies', async (_req, res, next) => {
   }
 });
 
-app.get('/api/movies/:id', async (req, res, next) => {
+app.get('/api/movies/:id', requireAccess, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) {
@@ -153,7 +192,16 @@ app.get('/api/movies/:id', async (req, res, next) => {
       related = [...related, ...more];
     }
 
-    res.json({ movie, related });
+    const notes = await pool.query(
+      `SELECT id, author, body, created_at
+         FROM movie_notes
+        WHERE movie_id = $1
+        ORDER BY created_at DESC
+        LIMIT 100`,
+      [id]
+    );
+
+    res.json({ movie, related, notes: notes.rows });
   } catch (error) {
     next(error);
   }
@@ -201,12 +249,71 @@ app.post(
         [title, description || null, genre || null, year, poster_url, video_url]
       );
 
-      res.status(201).json({ movie: rows[0] });
+      const movie = rows[0];
+      // The film is already saved; the email is a nice-to-have.
+      void notifyNewThing({
+        title: movie.title,
+        kind: 'film',
+        description: movie.description || '',
+        extra: [movie.year, movie.genre].filter(Boolean).join(' · '),
+        link: process.env.PUBLIC_SITE_URL ? `${process.env.PUBLIC_SITE_URL}/watch/${movie.id}` : '',
+      });
+
+      res.status(201).json({ movie });
     } catch (error) {
       next(error);
     }
   }
 );
+
+/* ----------------------------- her notes ----------------------------- */
+const noteAttempts = rateLimit({
+  max: 12,
+  windowMs: 60 * 1000,
+  message: 'Slow down a moment — one note at a time.',
+});
+
+app.post('/api/movies/:id/notes', requireAccess, noteAttempts, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'That is not a movie id.' });
+    }
+
+    const body = String((req.body || {}).body || '').trim().slice(0, 1000);
+    const author = String((req.body || {}).author || '').trim().slice(0, 40) || null;
+    if (body.length < 1) {
+      return res.status(400).json({ error: 'Write something first.' });
+    }
+
+    const { rows: movie } = await pool.query('SELECT id FROM movies WHERE id = $1', [id]);
+    if (!movie.length) return res.status(404).json({ error: 'Movie not found.' });
+
+    const { rows } = await pool.query(
+      `INSERT INTO movie_notes (movie_id, author, body)
+       VALUES ($1, $2, $3)
+       RETURNING id, author, body, created_at`,
+      [id, author, body]
+    );
+
+    res.status(201).json({ note: rows[0] });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete('/api/movies/:id/notes/:noteId', requireKey, async (req, res, next) => {
+  try {
+    const { rowCount } = await pool.query(
+      'DELETE FROM movie_notes WHERE id = $1 AND movie_id = $2',
+      [Number(req.params.noteId), Number(req.params.id)]
+    );
+    if (!rowCount) return res.status(404).json({ error: 'Note not found.' });
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.delete('/api/movies/:id', requireKey, async (req, res, next) => {
   try {
@@ -230,7 +337,7 @@ app.delete('/api/movies/:id', requireKey, async (req, res, next) => {
 });
 
 /* ---------------------------- series ---------------------------- */
-app.get('/api/series', async (_req, res, next) => {
+app.get('/api/series', requireAccess, async (_req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT s.*,
@@ -244,7 +351,7 @@ app.get('/api/series', async (_req, res, next) => {
   }
 });
 
-app.get('/api/series/:id', async (req, res, next) => {
+app.get('/api/series/:id', requireAccess, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) {
@@ -334,6 +441,15 @@ app.post(
         }
 
         await client.query('COMMIT');
+        void notifyNewThing({
+          title: series.title,
+          kind: 'film',
+          description: series.description || '',
+          extra: `${episodes.length} episode${episodes.length === 1 ? '' : 's'}`,
+          link: process.env.PUBLIC_SITE_URL
+            ? `${process.env.PUBLIC_SITE_URL}/series/${series.id}`
+            : '',
+        });
         res.status(201).json({ series, episodeCount: episodes.length });
       } catch (error) {
         await client.query('ROLLBACK');
@@ -382,6 +498,18 @@ app.post(
          VALUES ($1, $2, $3, $4) RETURNING *`,
         [id, nextNumber, (body.title || '').trim() || null, video_url]
       );
+
+      const { rows: parent } = await pool.query('SELECT title FROM series WHERE id = $1', [id]);
+      void notifyNewThing({
+        title: parent[0]?.title || 'our series',
+        kind: 'episode',
+        description: rows[0].title || `Episode ${nextNumber}`,
+        extra: `Episode ${nextNumber} just went up.`,
+        link: process.env.PUBLIC_SITE_URL
+          ? `${process.env.PUBLIC_SITE_URL}/series/${id}`
+          : '',
+      });
+
       res.status(201).json({ episode: rows[0] });
     } catch (error) {
       next(error);
@@ -415,7 +543,7 @@ app.delete('/api/series/:id', requireKey, async (req, res, next) => {
 });
 
 /* ---------------------------- letter ---------------------------- */
-app.get('/api/letter', async (_req, res, next) => {
+app.get('/api/letter', requireAccess, async (_req, res, next) => {
   try {
     const { rows } = await pool.query('SELECT * FROM letter WHERE id = 1');
     res.json({ letter: rows[0] || null });
@@ -458,6 +586,57 @@ app.put('/api/letter', requireKey, async (req, res, next) => {
   }
 });
 
+/* ------------------------- error monitoring ------------------------- */
+// A tiny error inbox: the browser posts what broke, and the owner can read the
+// last 50 reports from /upload. (Point SENTRY_DSN at Sentry instead if you ever
+// want stack-trace grouping — this needs no account.)
+const errorAttempts = rateLimit({ max: 30, windowMs: 60 * 1000 });
+
+function recordError({ message, stack, url, userAgent }) {
+  pool
+    .query(
+      `INSERT INTO client_errors (message, stack, url, user_agent)
+       VALUES ($1, $2, $3, $4)`,
+      [String(message || '').slice(0, 500), String(stack || '').slice(0, 4000), String(url || '').slice(0, 500), String(userAgent || '').slice(0, 300)]
+    )
+    .catch((error) => console.warn('[errors] could not save:', error.message));
+}
+
+app.post('/api/errors', errorAttempts, (req, res) => {
+  const body = req.body || {};
+  if (!body.message) return res.status(400).json({ error: 'Nothing to report.' });
+  recordError({
+    message: body.message,
+    stack: body.stack,
+    url: body.url,
+    userAgent: body.userAgent || req.get('user-agent'),
+  });
+  res.status(202).json({ ok: true });
+});
+
+app.get('/api/errors', requireKey, async (_req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, message, stack, url, user_agent, created_at
+         FROM client_errors
+        ORDER BY created_at DESC
+        LIMIT 50`
+    );
+    res.json({ errors: rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete('/api/errors', requireKey, async (_req, res, next) => {
+  try {
+    await pool.query('DELETE FROM client_errors');
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
 /* ------------------------------------------------------------------ */
 /* Production: serve the built React app                              */
 /* ------------------------------------------------------------------ */
@@ -470,8 +649,18 @@ if (!SERVERLESS && fs.existsSync(distDir)) {
   });
 }
 
-app.use((err, _req, res, _next) => {
+app.use((err, req, res, _next) => {
   console.error('[api]', err.message);
+  // Keep a record of server-side failures too, so they show up next to the
+  // browser ones instead of only in the Vercel log.
+  if (!err.code) {
+    recordError({
+      message: `[api] ${err.message}`,
+      stack: err.stack,
+      url: req.originalUrl,
+      userAgent: req.get('user-agent'),
+    });
+  }
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({ error: 'That file is a little too big (200MB max).' });
   }

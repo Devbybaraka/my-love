@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Poster from '../components/Poster';
-import { api, formatDuration, getUploadKey } from '../lib/api';
+import { api, formatDuration, formatClock, getUploadKey } from '../lib/api';
 import { attachFullscreenRotation } from '../lib/fullscreenRotate';
 import { directUploadReady, uploadToCloudinary } from '../lib/cloudinaryUpload';
+import { clearProgress, episodeKey, getProgress, saveProgress } from '../lib/progress';
 
 export default function Series() {
   const { id } = useParams();
@@ -20,7 +21,9 @@ export default function Series() {
   const [newEpisode, setNewEpisode] = useState({ title: '', url: '', file: null });
   const [addBusy, setAddBusy] = useState(false);
   const [addProgress, setAddProgress] = useState(null);
+  const [resumedAt, setResumedAt] = useState(null);
   const videoRef = useRef(null);
+  const lastSaved = useRef(0);
 
   useEffect(() => {
     let alive = true;
@@ -65,7 +68,45 @@ export default function Series() {
     if (promise) promise.catch(() => {});
   }, [index]);
 
+  function handleMetadata(event) {
+    const video = event.currentTarget;
+    setDuration(video.duration);
+    if (!current) return;
+    const saved = getProgress(episodeKey(current.id));
+    if (
+      saved &&
+      Number.isFinite(saved.t) &&
+      saved.t > 5 &&
+      Number.isFinite(video.duration) &&
+      saved.t < video.duration - Math.min(10, video.duration * 0.1)
+    ) {
+      try {
+        video.currentTime = saved.t;
+        setResumedAt(saved.t);
+      } catch {
+        /* not ready to seek yet */
+      }
+    }
+  }
+
+  function handleTimeUpdate(event) {
+    const video = event.currentTarget;
+    if (!current || !video.duration || video.seeking) return;
+    const now = Date.now();
+    if (now - lastSaved.current < 4000) return;
+    lastSaved.current = now;
+    saveProgress(episodeKey(current.id), {
+      t: video.currentTime,
+      d: video.duration,
+      title: current.title || `Episode ${current.episode_number}`,
+      href: `/series/${id}`,
+      kind: 'episode',
+      id: current.id,
+    });
+  }
+
   function handleEnded() {
+    if (current) clearProgress(episodeKey(current.id));
     if (index + 1 < episodes.length) setIndex(index + 1);
   }
 
@@ -158,7 +199,8 @@ export default function Series() {
               poster={series.poster_url || undefined}
               src={current.video_url}
               onEnded={handleEnded}
-              onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+              onLoadedMetadata={handleMetadata}
+              onTimeUpdate={handleTimeUpdate}
               className="aspect-video w-full bg-black"
             >
               Your browser can&rsquo;t play this episode.
@@ -169,6 +211,22 @@ export default function Series() {
             </div>
           )}
         </div>
+
+        {resumedAt !== null && (
+          <p className="mt-3 text-[10px] uppercase tracking-[0.22em] text-cream/35">
+            picking up at {formatClock(resumedAt)} —{' '}
+            <button
+              type="button"
+              onClick={() => {
+                if (videoRef.current) videoRef.current.currentTime = 0;
+                setResumedAt(null);
+              }}
+              className="underline decoration-cream/20 underline-offset-4 transition hover:text-rose-soft"
+            >
+              play this episode from the start
+            </button>
+          </p>
+        )}
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-[11px] uppercase tracking-[0.24em] text-rose/70">

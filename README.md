@@ -37,8 +37,11 @@ npm run db:init         # creates the `movies` and `letter` tables
 | `DATABASE_URL` | yes | Your Neon connection string (Project → Connection Details → copy the **pooled** string). Keep `?sslmode=require` at the end. |
 | `PORT` | no | API port. Defaults to `4000`. The Vite dev server proxies `/api` and `/uploads` here. |
 | `UPLOAD_PASSCODE` | **yes (set one)** | The word you type on `/upload` and `/letter`. It is also sent as the `x-upload-key` header for the API. |
+| `SITE_PASSCODE` | no | The word that opens the **whole site** (the letter and the films). Defaults to `UPLOAD_PASSCODE` when empty, so one word does both jobs. |
 | `UPLOADS_DIR` | no | Where uploaded films are written. Defaults to `./uploads`. |
 | `CLOUDINARY_CLOUD_NAME` / `_API_KEY` / `_API_SECRET` | no | Only if you *want* Cloudinary. Leave empty to store files on disk. |
+| `RESEND_API_KEY` / `NOTIFY_EMAIL` | no | Sends *her* a short email when a new film or episode goes up. With them empty nothing is sent and uploads behave exactly the same. `NOTIFY_FROM` overrides the sender (default `onboarding@resend.dev`, which only delivers to your own Resend account address until you verify a domain). |
+| `PUBLIC_SITE_URL` | no | Used to put a working "open it" link in that email, e.g. `https://my-love-plum-five.vercel.app`. |
 
 `.env` is gitignored. Never commit it.
 
@@ -267,6 +270,9 @@ on an existing database — it only adds).
 | What you see | Why / fix |
 | --- | --- |
 | `That passphrase is not right` | The word you typed isn't `UPLOAD_PASSCODE`. Fix it in `.env` and restart the API. |
+| `That word is not the one we picked` | The door word (`SITE_PASSCODE`, or `UPLOAD_PASSCODE` if that's empty). |
+| `Too many tries. Wait a few minutes…` | The door allows 8 wrong guesses per 15 minutes per address. Wait it out; changing the word also clears it on restart. |
+| The site asks for the word again | The cookie expired or the word changed (a new word invalidates old cookies on purpose). Type the new one. |
 | `Cloudinary keys are not set yet` | You're on an older build. With current code, files simply go to `./uploads`. |
 | `That file is a little too big (200MB max)` | Compress the film (HandBrake, or `ffmpeg -i in.mp4 -vcodec h264 -crf 26 out.mp4`). |
 | Video area stays black | The URL isn't a direct video file, or the file's codec isn't browser-friendly. Use H.264 `.mp4`. |
@@ -283,9 +289,12 @@ Testing on her phone: run `npm run dev`, then open
 
 ## 10. A note before you share it
 
-- Change `UPLOAD_PASSCODE` from the default before putting this online.
-- `/upload` and `/letter` are protected only by that passphrase — fine for a
-  gift, not for a bank.
+- Change `UPLOAD_PASSCODE` (and `SITE_PASSCODE`) from the default before
+  putting this online.
+- With a word set, **nothing renders** until it's been said: the letter, the
+  films, the whole site. It's checked on the server and remembered in an
+  http-only cookie, so the word isn't in the JavaScript bundle. It's still a
+  shared word for a gift, not an account system — fine for this, not for a bank.
 - The 7 seeded films are demo entries. Open each one and use
   **remove this film**, then add your own.
 - `uploads/` is gitignored: back it up if those files only exist there.
@@ -326,9 +335,13 @@ letter, Vercel serves the code.
    | --- | --- |
    | `DATABASE_URL` | your Neon connection string (`postgresql://…-pooler…`) |
    | `UPLOAD_PASSCODE` | your passphrase (not `newton`) |
+   | `SITE_PASSCODE` | the word that opens the whole site (optional; falls back to `UPLOAD_PASSCODE`) |
    | `CLOUDINARY_CLOUD_NAME` | from the Cloudinary dashboard |
    | `CLOUDINARY_API_KEY` | from the Cloudinary dashboard |
    | `CLOUDINARY_API_SECRET` | from the Cloudinary dashboard |
+   | `RESEND_API_KEY` | optional — new-film emails (resend.com → API Keys) |
+   | `NOTIFY_EMAIL` | optional — her address |
+   | `PUBLIC_SITE_URL` | optional — `https://your-app.vercel.app`, for email links |
 
 4. **Deploy**.
 5. Check `https://your-app.vercel.app/api/health` → it should say
@@ -392,3 +405,48 @@ docker run -d -p 4000:4000 -v movie-uploads:/data \
   --size 5`, mount at `/data`, then `fly secrets set …`.
 
 Either way Neon stays the database and nothing else needs changing.
+
+---
+
+## 12. The small things
+
+A few details that make it feel less like a website:
+
+**The door.** With `SITE_PASSCODE` (or `UPLOAD_PASSCODE`) set, every page asks
+for the word before showing anything. It's checked on the server, sent back as
+an http-only cookie, and wrong guesses are throttled (8 per 15 minutes per
+address). To lock the site down harder, use a longer word — the cookie is signed
+with it, so changing the word logs everyone out.
+
+**Picking up where you left off.** The player remembers the spot every few
+seconds, on that device only (nothing is stored on the server — her phone and
+yours keep their own places). On returning: a quiet *picking up at 12:04* line
+with **start from the beginning** under the video, a thin progress line on the
+poster in `/movies`, and a **keep going** row at the top of `/movies` with the
+half-watched films and episodes.
+
+**Her notes.** Under every film is a small box: she can leave a line about it
+(name optional). They appear newest-first, and you can remove any of them (the
+remove link shows when your passphrase is saved in that browser). Notes are
+readable only through the door.
+
+**A note when something new arrives.** Set `RESEND_API_KEY` + `NOTIFY_EMAIL`
+and she gets a short, dark-and-rose email whenever a film, series or episode is
+added. No key, no email, no errors — the upload still works. Email is sent after
+the film is saved and never blocks the upload.
+
+**When something breaks.** The app now has an error boundary (a gentle page
+instead of a white screen), and anything that throws in the browser — or in the
+API — is written to the `client_errors` table. Open `/upload` with your
+passphrase and scroll to **something broke** to read the last few, or press
+**clear**. No third-party account needed.
+
+**On her home screen.** `manifest.webmanifest` + a service worker mean the site
+can be added to her home screen (Safari: Share → Add to Home Screen; Android:
+⋮ → Add to Home screen) and opens full-screen with the heart icon. The shell is
+cached, so the letter still opens with a bad signal; films always stream live.
+Regenerate the icons with `npm run icons`.
+
+**Fullscreen.** Rotating the phone in fullscreen rotates the film with it
+(`screen.orientation.lock('any')`, unlocked again on exit). On iPhones that
+don't allow locking, the video simply follows the device rotation.

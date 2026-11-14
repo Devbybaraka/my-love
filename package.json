@@ -9,7 +9,8 @@
     "dev:server": "node --watch server/index.js",
     "build": "vite build",
     "start": "node server/index.js",
-    "db:init": "node server/init-db.js"
+    "db:init": "node server/init-db.js",
+    "icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
     "cloudinary": "^2.5.1",

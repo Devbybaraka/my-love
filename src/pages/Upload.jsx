@@ -29,6 +29,7 @@ export default function Upload() {
   const [created, setCreated] = useState(null);
   const [shelf, setShelf] = useState({ movies: [], series: [] });
   const [removing, setRemoving] = useState(null);
+  const [errorLog, setErrorLog] = useState(null);
 
   useEffect(() => {
     if (!unlocked) return;
@@ -43,6 +44,14 @@ export default function Upload() {
       alive = false;
     };
   }, [unlocked, created]);
+
+  useEffect(() => {
+    if (!unlocked) return;
+    api
+      .listErrors()
+      .then((data) => setErrorLog(data.errors || []))
+      .catch(() => setErrorLog(null));
+  }, [unlocked]);
 
   async function removeFromShelf(kind, id) {
     setRemoving(id);
@@ -613,6 +622,50 @@ export default function Upload() {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Something broke? Everything the browser reported, newest first. */}
+        {unlocked && errorLog && errorLog.length > 0 && (
+          <section className="mt-12">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="flex items-center gap-3 text-[9px] uppercase tracking-[0.4em] text-gold">
+                something broke
+                <span className="h-px w-12 bg-gradient-to-r from-gold/60 to-transparent" />
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await api.clearErrors();
+                    setErrorLog([]);
+                  } catch (err) {
+                    setError(err.message);
+                  }
+                }}
+                className="text-[9px] uppercase tracking-[0.22em] text-cream/30 hover:text-rose"
+              >
+                clear
+              </button>
+            </div>
+            <ul className="space-y-2">
+              {errorLog.slice(0, 8).map((entry) => (
+                <li
+                  key={entry.id}
+                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
+                >
+                  <p className="text-[13px] leading-relaxed text-cream/70">
+                    {entry.message}
+                  </p>
+                  <p className="mt-1 truncate text-[9px] uppercase tracking-[0.18em] text-cream/25">
+                    {entry.created_at
+                      ? new Date(entry.created_at).toLocaleString()
+                      : ''}
+                    {entry.url ? ` · ${entry.url}` : ''}
+                  </p>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
       </main>

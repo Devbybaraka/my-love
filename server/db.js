@@ -50,6 +50,23 @@ export const SCHEMA = `
     UNIQUE (series_id, episode_number)
   );
 
+  CREATE TABLE IF NOT EXISTS movie_notes (
+    id SERIAL PRIMARY KEY,
+    movie_id INT NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+    author TEXT,
+    body TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+
+  CREATE TABLE IF NOT EXISTS client_errors (
+    id SERIAL PRIMARY KEY,
+    message TEXT NOT NULL,
+    stack TEXT,
+    url TEXT,
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+
   CREATE TABLE IF NOT EXISTS letter (
     id INT PRIMARY KEY,
     salutation TEXT NOT NULL DEFAULT 'My dearest,',
