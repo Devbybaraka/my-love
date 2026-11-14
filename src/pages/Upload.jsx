@@ -71,17 +71,12 @@ export default function Upload() {
         const result = await api.createMovie(data);
         setCreated({ kind: 'film', id: result.movie.id, title: result.movie.title });
       } else {
-        const usable = episodes.filter(
-          (episode) => episode.file || episode.url.trim()
-        );
-        if (!usable.length) {
-          throw new Error('A series needs at least one episode with a video.');
-        }
-        episodes.forEach((episode) => {
-          data.append('episode_title', episode.title.trim());
-          data.append('episode_video_url', episode.url.trim());
-          data.append('episode_has_file', episode.file ? '1' : '0');
-          if (episode.file) data.append('episode_video', episode.file);
+        // One numbered trio per row, so the server pairs them without guessing.
+        data.append('episode_count', String(episodes.length));
+        episodes.forEach((episode, index) => {
+          data.append(`episode_title_${index}`, episode.title.trim());
+          data.append(`episode_video_url_${index}`, episode.url.trim());
+          if (episode.file) data.append(`episode_video_${index}`, episode.file);
         });
         const result = await api.createSeries(data);
         setCreated({

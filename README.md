@@ -161,7 +161,7 @@ database has no saved version.
 ## 6. Cloudinary (optional)
 
 Only needed if you'd rather not keep films on the server's disk — for example
-if you host somewhere with ephemeral storage.
+on **Vercel**, where films must live in Cloudinary (see §11).
 
 1. Create a free account at <https://cloudinary.com>.
 2. Dashboard → copy **Cloud name**, **API Key**, **API Secret**.
@@ -193,18 +193,21 @@ if you host somewhere with ephemeral storage.
 `title`, `description`, `genre`, `year`, `poster_url`, `video_url`, and the
 optional files `poster` and `video`.
 
-`POST /api/series` takes the same fields plus repeated episode parts, one set
-per episode and in order:
+`POST /api/series` takes the same fields plus `episode_count` and one numbered
+trio per episode — `episode_title_0`, `episode_video_url_0`, and optionally the
+file `episode_video_0` (then `_1`, `_2`, …). Send a file *or* a URL per row:
 
 ```bash
 curl -X POST http://localhost:4000/api/series \
   -H "x-upload-key: YOUR_PASSCODE" \
-  -F "title=Our Slow Evenings" -F "genre=Romance" \
-  -F "episode_title=Episode 1" -F "episode_video_url=" -F "episode_has_file=1" \
-  -F "episode_video=@/path/to/episode-1.mp4" \
-  -F "episode_title=Episode 2" -F "episode_video_url=" -F "episode_has_file=1" \
-  -F "episode_video=@/path/to/episode-2.mp4"
+  -F "title=Our Slow Evenings" -F "genre=Romance" -F "episode_count=2" \
+  -F "episode_title_0=Episode 1" -F "episode_video_url_0=" \
+  -F "episode_video_0=@/path/to/episode-1.mp4" \
+  -F "episode_title_1=Episode 2" -F "episode_video_url_1=https://example.com/ep2.mp4"
 ```
+
+Rows that end up with neither a file nor a URL are skipped, and the rest keep
+their order (episode 1, 2, 3…) as saved.
 
 ---
 
@@ -289,63 +292,92 @@ Testing on her phone: run `npm run dev`, then open
 
 ---
 
-## 11. Deploy (so she can watch on her phone)
+## 11. Deploying on Neon + Vercel
 
-The films live on the server's disk, so the host has to give you a **disk that
-survives restarts** — a normal free web service won't. This repo ships the
-pieces for a host that does: `Dockerfile`, `.dockerignore`, `render.yaml`.
+Your stack is **Neon** (database) + **Vercel** (site and API). Both are wired up
+in this repo — `vercel.json` and `api/[...path].js` run the Express app as a
+Vercel function. But Vercel cannot hold films, so you need **one more account:
+Cloudinary (free)**.
 
-The database stays on **Neon** — the host only runs the app. Uploaded films go
-to the mounted disk, film titles/descriptions/episodes go to Neon.
+### Why Cloudinary is needed here
 
-### Render (recommended, ~5 minutes, needs the $7 starter instance for a disk)
+- Vercel functions have no permanent disk: anything written at runtime is gone
+  on the next request.
+- A Vercel request body is capped at about **4.5 MB**, so a real film cannot be
+  uploaded through the API at all.
 
-1. Push this repo to GitHub (already done if you're reading this there).
-2. <https://dashboard.render.com> → **New → Blueprint** → pick the repo.
-   Render reads `render.yaml` and creates `our-movie-corner` with a 5 GB disk
-   mounted at `/data`.
-3. When it asks for the `sync: false` values, paste:
-   - `DATABASE_URL` — the Neon connection string (the `postgresql://…` one).
-   - `UPLOAD_PASSCODE` — your passphrase (don't leave it as `newton`).
-4. **Apply**. First build takes a few minutes; health check is `/api/health`.
-5. Open the URL Render gives you (e.g. `https://our-movie-corner.onrender.com`).
-   That's the link you send her — it works on any phone, no Wi-Fi needed.
+So: Cloudinary stores the video files, Neon stores titles / episodes / the
+letter, Vercel serves the code.
 
-`UPLOADS_DIR=/data/uploads` is already set in `render.yaml`; that's the line
-that makes films outlive a deploy. If Render restarts the service, the films
-are still there.
+### 1. Cloudinary — the extra account (5 minutes)
 
-### Railway / Fly.io / any Docker host
+1. <https://cloudinary.com> → sign up free (25 GB storage + 25 GB/month
+   bandwidth, plenty for a gift).
+2. Dashboard → copy **Cloud name**, **API Key**, **API Secret**.
 
-Same image, same three variables, one volume:
+### 2. Vercel project
+
+1. <https://vercel.com/new> → import `Devbybaraka/my-love`.
+2. Framework preset **Vite**; build command `npm run build`, output `dist`
+   (already set in `vercel.json` — don't override them).
+3. **Environment Variables** (add for Production *and* Preview):
+
+   | Name | Value |
+   | --- | --- |
+   | `DATABASE_URL` | your Neon connection string (`postgresql://…-pooler…`) |
+   | `UPLOAD_PASSCODE` | your passphrase (not `newton`) |
+   | `CLOUDINARY_CLOUD_NAME` | from the Cloudinary dashboard |
+   | `CLOUDINARY_API_KEY` | from the Cloudinary dashboard |
+   | `CLOUDINARY_API_SECRET` | from the Cloudinary dashboard |
+
+4. **Deploy**.
+5. Check `https://your-app.vercel.app/api/health` → it should say
+   `"storage":"cloudinary"`. If it says `"disk"`, the Cloudinary variables
+   didn't reach the function — fix them and **Redeploy** (env changes only
+   apply to new deployments).
+6. That URL is the link you send her. It works on any phone, no Wi-Fi needed.
+
+### Getting films in on Vercel
+
+- **Small clips** (under ~4 MB): the normal `/upload` form works — the file is
+  copied to Cloudinary before the request ends.
+- **Real films**: upload the file straight into Cloudinary
+  (Media Library → **Upload**), then copy its delivery URL
+  (`https://res.cloudinary.com/<cloud>/video/upload/v…/film.mp4`) and paste it
+  into the **…or a video URL** field on `/upload`. Posters work the same way.
+  The player uses the URL directly, so there is no size limit.
+- Big files uploading straight from the browser to Cloudinary is possible
+  (an unsigned upload preset) — ask if you want it, it isn't wired up yet.
+
+### Post-deploy checklist
+
+- `/api/health` → `{"ok":true,…,"storage":"cloudinary"}`.
+- Add one film and one series, open `/series/:id` on your phone, and let an
+  episode roll into the next.
+- Save the letter at `/letter` once — it lives in Neon, so it survives
+  redeploys.
+
+### Alternative: a host that keeps a disk
+
+If you would rather upload 200 MB films straight from `/upload`, run the same
+repo somewhere with a volume. The `Dockerfile` and `render.yaml` here do that
+(uploads land in `/data/uploads` via `UPLOADS_DIR`, and Cloudinary is then
+optional):
 
 ```bash
 docker build -t movie-corner .
-docker run -d -p 4000:4000 \
-  -v movie-uploads:/data \
+docker run -d -p 4000:4000 -v movie-uploads:/data \
   -e DATABASE_URL="postgresql://…neon…" \
   -e UPLOAD_PASSCODE="your-word" \
   -e UPLOADS_DIR=/data/uploads \
   movie-corner
 ```
 
-- **Railway:** New Project → Deploy from repo → it builds the `Dockerfile` →
-  add a **Volume** mounted at `/data` → set the env vars → generate a domain.
-- **Fly.io:** `fly launch --dockerfile Dockerfile`, then
-  `fly volumes create uploads --size 5`, mount it at `/data` in `fly.toml`,
-  and `fly secrets set DATABASE_URL=… UPLOAD_PASSCODE=…`.
+- **Render:** New → Blueprint → pick the repo (it reads `render.yaml`, creates
+  a 5 GB disk, and asks for `DATABASE_URL` + `UPLOAD_PASSCODE`).
+- **Railway:** deploy from the repo, add a Volume at `/data`, set the same
+  variables.
+- **Fly.io:** `fly launch --dockerfile Dockerfile`, `fly volumes create uploads
+  --size 5`, mount at `/data`, then `fly secrets set …`.
 
-### What to check after deploying
-
-- `https://your-app/api/health` returns `{"ok":true,...,"storage":"disk"}`.
-- Upload one small film from `/upload`, then **restart the service** in the
-  host dashboard and reload the film — if it still plays, the disk is mounted
-  correctly.
-- Open the site on her phone, add it to the home screen; the letter and the
-  movie corner both work in mobile Safari/Chrome.
-
-### Sizes
-
-- Videos up to **200 MB** each (change `limits.fileSize` in `server/index.js`).
-  A 5 GB disk holds roughly 25 such films — plenty for a gift. Raise
-  `sizeGB` in `render.yaml` before the first deploy if you want more.
+Either way Neon stays the database and nothing else needs changing.

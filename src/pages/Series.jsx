@@ -44,21 +44,23 @@ export default function Series() {
   const current = episodes[index];
   const canEdit = Boolean(getUploadKey());
 
-  /* Episodes roll into each other: when one ends, the next starts. */
-  function handleEnded() {
-    if (index + 1 < episodes.length) {
-      setIndex((value) => value + 1);
-      setDuration(null);
-    }
-  }
+  const firstEpisode = useRef(true);
 
+  /* Episodes roll into each other: when one ends (or you pick another),
+     the new episode starts playing as soon as it is loaded. */
   useEffect(() => {
-    if (index === 0) return;
-    const video = videoRef.current;
-    if (!video) return;
-    const promise = video.play();
-    if (promise && promise.catch) promise.catch(() => {});
+    if (firstEpisode.current) {
+      firstEpisode.current = false;
+      return;
+    }
+    setDuration(null);
+    const promise = videoRef.current?.play();
+    if (promise) promise.catch(() => {});
   }, [index]);
+
+  function handleEnded() {
+    if (index + 1 < episodes.length) setIndex(index + 1);
+  }
 
   async function addEpisode(event) {
     event.preventDefault();
@@ -264,12 +266,7 @@ export default function Series() {
               <button
                 key={episode.id}
                 type="button"
-                onClick={() => {
-                  setIndex(i);
-                  setDuration(null);
-                  const video = videoRef.current;
-                  if (video && i === index) video.play().catch(() => {});
-                }}
+                onClick={() => setIndex(i)}
                 className={`flex w-full items-center gap-4 px-4 py-3 text-left transition ${
                   i === index ? 'bg-rose/[0.09]' : 'hover:bg-white/[0.04]'
                 }`}

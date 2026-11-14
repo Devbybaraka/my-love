@@ -16,9 +16,11 @@ const PORT = Number(process.env.PORT) || 4000;
 /* ------------------------------------------------------------------ */
 /* Where uploaded films live                                           */
 /* ------------------------------------------------------------------ */
-const UPLOADS_DIR = process.env.UPLOADS_DIR
-  ? path.resolve(process.env.UPLOADS_DIR)
-  : path.join(__dirname, '..', 'uploads');
+// Vercel functions have no writable project folder, only /tmp. Real films there
+// belong on Cloudinary; this is just a safe default so nothing crashes.
+const SERVERLESS = Boolean(process.env.VERCEL);
+const DEFAULT_UPLOADS = SERVERLESS ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
+const UPLOADS_DIR = path.resolve(process.env.UPLOADS_DIR || DEFAULT_UPLOADS);
 const TMP_DIR = path.join(UPLOADS_DIR, 'tmp');
 fs.mkdirSync(TMP_DIR, { recursive: true });
 
@@ -262,13 +264,11 @@ app.get('/api/series/:id', async (req, res, next) => {
 app.post(
   '/api/series',
   requireKey,
-  upload.fields([
-    { name: 'poster', maxCount: 1 },
-    { name: 'episode_video', maxCount: 60 },
-  ]),
+  upload.any(),
   async (req, res, next) => {
     try {
       const body = req.body || {};
+      const files = req.files || [];
       const title = (body.title || '').trim();
       if (!title) return res.status(400).json({ error: 'Give the series a title.' });
 
@@ -278,29 +278,33 @@ app.post(
         return res.status(400).json({ error: 'That year looks a little off.' });
       }
 
-      let poster_url = (body.poster_url || '').trim() || null;
-      if (req.files?.poster?.[0]) {
-        poster_url = await storeFile(req.files.poster[0], 'poster');
+      // Reject stray upload fields before anything is stored, then clean the temp files.
+      if (files.some((file) => !/^(poster|episode_video_\d+)$/.test(file.fieldname))) {
+        await Promise.all(files.map((file) => fs.promises.unlink(file.path).catch(() => {})));
+        return res.status(400).json({ error: 'Unexpected file field in the upload.' });
       }
 
-      const asArray = (value) => (Array.isArray(value) ? value : value ? [value] : []);
-      const titles = asArray(body.episode_title);
-      const urls = asArray(body.episode_video_url);
-      const hasFile = asArray(body.episode_has_file).map((flag) => String(flag) === '1');
-      const files = req.files?.episode_video || [];
+      const poster = files.find((file) => file.fieldname === 'poster');
+      let poster_url = (body.poster_url || '').trim() || null;
+      if (poster) poster_url = await storeFile(poster, 'poster');
 
-      const total = Math.max(titles.length, urls.length, hasFile.length);
+      // Episodes arrive as episode_title_0, episode_video_url_0, episode_video_0,
+      // then _1, _2, … so each row pairs with itself — no counters to keep in step.
+      const episodeFiles = new Map(
+        files
+          .filter((file) => file.fieldname !== 'poster')
+          .map((file) => [file.fieldname, file])
+      );
+      const count = Math.min(60, Math.max(0, Number(body.episode_count) || 0));
       const episodes = [];
-      let fileIndex = 0;
 
-      for (let i = 0; i < total; i += 1) {
-        let video = (urls[i] || '').trim();
-        if (hasFile[i] && files[fileIndex]) {
-          video = await storeFile(files[fileIndex], 'video');
-          fileIndex += 1;
-        }
+      for (let i = 0; i < count; i += 1) {
+        const file = episodeFiles.get(`episode_video_${i}`);
+        const video = file
+          ? await storeFile(file, 'video')
+          : (body[`episode_video_url_${i}`] || '').trim();
         if (video) {
-          episodes.push({ title: (titles[i] || '').trim(), video });
+          episodes.push({ title: (body[`episode_title_${i}`] || '').trim(), video });
         }
       }
 
@@ -343,22 +347,32 @@ app.post(
 app.post(
   '/api/series/:id/episodes',
   requireKey,
-  upload.fields([{ name: 'video', maxCount: 1 }]),
+  upload.single('video'),
   async (req, res, next) => {
     try {
       const id = Number(req.params.id);
       const body = req.body || {};
+      if (!Number.isInteger(id)) {
+        return res.status(404).json({ error: 'Series not found.' });
+      }
+
+      // Check before touching the upload, so a bad id never leaves a stray file.
+      const { rows: series } = await pool.query('SELECT id FROM series WHERE id = $1', [id]);
+      if (!series.length) {
+        return res.status(404).json({ error: 'Series not found.' });
+      }
+
       let video_url = (body.video_url || '').trim();
-      if (req.files?.video?.[0]) video_url = await storeFile(req.files.video[0], 'video');
+      if (req.file) video_url = await storeFile(req.file, 'video');
       if (!video_url) {
         return res.status(400).json({ error: 'Give the episode a video file or URL.' });
       }
 
-      const { rows: existing } = await pool.query(
-        'SELECT COALESCE(MAX(episode_number), 0)::int AS last FROM episodes WHERE series_id = $1',
+      const { rows: last } = await pool.query(
+        'SELECT COALESCE(MAX(episode_number), 0)::int AS number FROM episodes WHERE series_id = $1',
         [id]
       );
-      const nextNumber = existing[0].last + 1;
+      const nextNumber = last[0].number + 1;
 
       const { rows } = await pool.query(
         `INSERT INTO episodes (series_id, episode_number, title, video_url)
@@ -443,7 +457,7 @@ app.put('/api/letter', requireKey, async (req, res, next) => {
 /* Production: serve the built React app                              */
 /* ------------------------------------------------------------------ */
 const distDir = path.join(__dirname, '..', 'dist');
-if (fs.existsSync(distDir)) {
+if (!SERVERLESS && fs.existsSync(distDir)) {
   app.use(express.static(distDir));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
@@ -466,11 +480,16 @@ initSchema().catch((error) =>
   console.error('[db] could not prepare the tables:', error.message)
 );
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[api] listening on http://localhost:${PORT}`);
-  console.log(
-    cloudinaryReady
-      ? '[api] uploads → Cloudinary'
-      : `[api] uploads → local disk (${UPLOADS_DIR})`
-  );
-});
+// On Vercel the platform calls the exported app; everywhere else we listen.
+if (!SERVERLESS) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[api] listening on http://localhost:${PORT}`);
+    console.log(
+      cloudinaryReady
+        ? '[api] uploads → Cloudinary'
+        : `[api] uploads → local disk (${UPLOADS_DIR})`
+    );
+  });
+}
+
+export default app;
