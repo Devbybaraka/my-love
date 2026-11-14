@@ -295,7 +295,7 @@ Testing on her phone: run `npm run dev`, then open
 ## 11. Deploying on Neon + Vercel
 
 Your stack is **Neon** (database) + **Vercel** (site and API). Both are wired up
-in this repo — `vercel.json` and `api/[...path].js` run the Express app as a
+in this repo — `vercel.json` and `api/index.js` run the Express app as a
 Vercel function. But Vercel cannot hold films, so you need **one more account:
 Cloudinary (free)**.
 
