@@ -8,6 +8,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { pool, initSchema } from './db.js';
 import { cloudinaryReady, uploadFromPath, deleteByUrl } from './cloudinary.js';
+import { bunnyReady, createBunnyVideo, deleteBunnyVideo } from './bunny.js';
 import {
   accessRequired,
   wordIsRight,
@@ -66,14 +67,15 @@ function keepOnDisk(file, kind) {
   return `/uploads/${name}`;
 }
 
-/** Cloudinary when configured, otherwise this server's own disk. */
+/** Posters still use Cloudinary (or disk). Videos are uploaded straight to
+ *  Bunny Stream from the browser via TUS, so they never pass through here. */
 async function storeFile(file, kind) {
   if (!file) return null;
   try {
-    if (cloudinaryReady) {
+    if (kind === 'poster' && cloudinaryReady) {
       const result = await uploadFromPath(file.path, {
-        resourceType: kind === 'video' ? 'video' : 'image',
-        folder: `our-movie-corner/${kind === 'video' ? 'films' : 'posters'}`,
+        resourceType: 'image',
+        folder: 'our-movie-corner/posters',
       });
       return result.secure_url;
     }
@@ -110,6 +112,7 @@ app.get('/api/health', async (_req, res) => {
       db: rows[0].now,
       cloudinary: cloudinaryReady,
       storage: cloudinaryReady ? 'cloudinary' : 'disk',
+      bunny: bunnyReady,
       door: accessRequired,
       notify: notificationsReady,
     });
@@ -143,6 +146,22 @@ app.post('/api/access', doorAttempts, (req, res) => {
 app.delete('/api/access', (req, res) => {
   clearDoorCookie(req, res);
   res.json({ ok: true });
+});
+
+/* ------------------------- bunny stream ------------------------- */
+// Mints a short-lived signature so the browser can upload a video straight to
+// Bunny Stream via TUS, without exposing our API key. Requires the upload key.
+app.post('/api/bunny/create-upload', requireKey, express.json(), async (req, res, next) => {
+  try {
+    if (!bunnyReady) {
+      return res.status(503).json({ error: 'Bunny Stream is not configured on this server.' });
+    }
+    const title = String((req.body || {}).title || '').trim() || 'Untitled';
+    const creds = await createBunnyVideo(title);
+    res.json(creds);
+  } catch (error) {
+    next(error);
+  }
 });
 
 /* ---------------------------- movies ---------------------------- */
@@ -228,13 +247,15 @@ app.post(
       }
 
       let poster_url = (body.poster_url || '').trim() || null;
-      let video_url = (body.video_url || '').trim() || null;
+      let video_url = (body.playback_url || body.video_url || '').trim() || null;
+      let bunny_id = (body.bunny_id || '').trim() || null;
 
       const posterFile = req.files?.poster?.[0];
       const videoFile = req.files?.video?.[0];
 
       if (posterFile) poster_url = await storeFile(posterFile, 'poster');
-      if (videoFile) video_url = await storeFile(videoFile, 'video');
+      // Backwards-compatible disk fallback when Bunny isn't configured.
+      if (videoFile && !bunny_id) video_url = await storeFile(videoFile, 'video');
 
       if (!video_url) {
         return res.status(400).json({
@@ -243,10 +264,10 @@ app.post(
       }
 
       const { rows } = await pool.query(
-        `INSERT INTO movies (title, description, genre, year, poster_url, video_url)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO movies (title, description, genre, year, poster_url, video_url, bunny_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`,
-        [title, description || null, genre || null, year, poster_url, video_url]
+        [title, description || null, genre || null, year, poster_url, video_url, bunny_id]
       );
 
       const movie = rows[0];
@@ -319,16 +340,16 @@ app.delete('/api/movies/:id', requireKey, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const { rows } = await pool.query(
-      'DELETE FROM movies WHERE id = $1 RETURNING poster_url, video_url',
+      'DELETE FROM movies WHERE id = $1 RETURNING poster_url, video_url, bunny_id',
       [id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Movie not found.' });
 
-    // remove locally stored files and any Cloudinary assets too
-    [rows[0].poster_url, rows[0].video_url].forEach((u) => {
-      deleteLocalFile(u);
-      deleteByUrl(u);
-    });
+    // remove locally stored files, Cloudinary assets (posters) and Bunny videos
+    deleteLocalFile(rows[0].poster_url);
+    deleteLocalFile(rows[0].video_url);
+    deleteByUrl(rows[0].poster_url);
+    deleteBunnyVideo(rows[0].bunny_id);
 
     res.json({ ok: true });
   } catch (error) {
@@ -410,11 +431,15 @@ app.post(
 
       for (let i = 0; i < count; i += 1) {
         const file = episodeFiles.get(`episode_video_${i}`);
-        const video = file
-          ? await storeFile(file, 'video')
-          : (body[`episode_video_url_${i}`] || '').trim();
+        const bunnyId = (body[`episode_bunny_id_${i}`] || '').trim() || null;
+        let video = (body[`episode_playback_url_${i}`] || body[`episode_video_url_${i}`] || '').trim();
+        if (file && !bunnyId) video = await storeFile(file, 'video');
         if (video) {
-          episodes.push({ title: (body[`episode_title_${i}`] || '').trim(), video });
+          episodes.push({
+            title: (body[`episode_title_${i}`] || '').trim(),
+            video,
+            bunnyId,
+          });
         }
       }
 
@@ -434,9 +459,9 @@ app.post(
 
         for (let i = 0; i < episodes.length; i += 1) {
           await client.query(
-            `INSERT INTO episodes (series_id, episode_number, title, video_url)
-             VALUES ($1, $2, $3, $4)`,
-            [series.id, i + 1, episodes[i].title || null, episodes[i].video]
+            `INSERT INTO episodes (series_id, episode_number, title, video_url, bunny_id)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [series.id, i + 1, episodes[i].title || null, episodes[i].video, episodes[i].bunnyId || null]
           );
         }
 
@@ -481,8 +506,9 @@ app.post(
         return res.status(404).json({ error: 'Series not found.' });
       }
 
-      let video_url = (body.video_url || '').trim();
-      if (req.file) video_url = await storeFile(req.file, 'video');
+      let video_url = (body.playback_url || body.video_url || '').trim();
+      let bunny_id = (body.bunny_id || '').trim() || null;
+      if (req.file && !bunny_id) video_url = await storeFile(req.file, 'video');
       if (!video_url) {
         return res.status(400).json({ error: 'Give the episode a video file or URL.' });
       }
@@ -494,9 +520,9 @@ app.post(
       const nextNumber = last[0].number + 1;
 
       const { rows } = await pool.query(
-        `INSERT INTO episodes (series_id, episode_number, title, video_url)
-         VALUES ($1, $2, $3, $4) RETURNING *`,
-        [id, nextNumber, (body.title || '').trim() || null, video_url]
+        `INSERT INTO episodes (series_id, episode_number, title, video_url, bunny_id)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [id, nextNumber, (body.title || '').trim() || null, video_url, bunny_id]
       );
 
       const { rows: parent } = await pool.query('SELECT title FROM series WHERE id = $1', [id]);
@@ -521,7 +547,7 @@ app.delete('/api/series/:id', requireKey, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const { rows } = await pool.query(
-      `SELECT s.poster_url, e.video_url
+      `SELECT s.poster_url, e.video_url, e.bunny_id
          FROM series s LEFT JOIN episodes e ON e.series_id = s.id
         WHERE s.id = $1`,
       [id]
@@ -533,7 +559,7 @@ app.delete('/api/series/:id', requireKey, async (req, res, next) => {
       deleteLocalFile(row.poster_url);
       deleteLocalFile(row.video_url);
       deleteByUrl(row.poster_url);
-      deleteByUrl(row.video_url);
+      deleteBunnyVideo(row.bunny_id);
     });
 
     res.json({ ok: true });

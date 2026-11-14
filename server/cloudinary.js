@@ -31,7 +31,8 @@ export async function deleteByUrl(url) {
     const lastDot = rest.lastIndexOf('.');
     const lastSlash = rest.lastIndexOf('/');
     if (lastDot > lastSlash) rest = rest.slice(0, lastDot);
-    const resourceType = url.includes('/video/') ? 'video' : 'image';
+    // Cloudinary is now only used for posters (images). Videos live on Bunny.
+    const resourceType = 'image';
     await cloudinary.uploader.destroy(rest, { resource_type: resourceType, invalidate: true });
   } catch {
     /* best-effort; ignore */

@@ -9,8 +9,12 @@ A love letter and a little cinema, in one place.
 - **`/letter`** — where you rewrite the letter (passphrase protected)
 
 React + Vite + Tailwind on the front, Express + Postgres (Neon) on the back.
-Film files are stored on the server's disk by default — **no Cloudinary account
-needed**. Cloudinary is supported if you ever want it.
+
+**Where the files live:** films and episodes are uploaded straight from the
+browser to **Bunny Stream** (chunked TUS upload, adaptive HLS playback, 700 MB+
+fine), and **Cloudinary keeps the posters**. Bunny gives you a video id and a
+`player.mediadelivery.net` playback URL, both saved in Neon. Without Bunny keys
+locally, videos fall back to this server's own disk so you can still work.
 
 ---
 
@@ -18,7 +22,10 @@ needed**. Cloudinary is supported if you ever want it.
 
 - Node.js 18 or newer
 - A Postgres database (this project is set up for [Neon](https://neon.tech), free tier is plenty)
-- Nothing else. No AWS, no Cloudinary, no paid services.
+- For deployed videos: a [Bunny Stream](https://bunny.net/stream) library (a
+  few dollars a month at real usage; trial credit to start)
+- For posters: a free [Cloudinary](https://cloudinary.com) account (optional —
+  locally, posters just go to `./uploads/`)
 
 ---
 
@@ -39,7 +46,8 @@ npm run db:init         # creates the `movies` and `letter` tables
 | `UPLOAD_PASSCODE` | **yes (set one)** | The word you type on `/upload` and `/letter`. It is also sent as the `x-upload-key` header for the API. |
 | `SITE_PASSCODE` | **set a simple one** | The word she types to open the **whole site** (films + letter). Make it short and easy to remember — it is *not* the upload word. Leave empty to reuse `UPLOAD_PASSCODE` (only if you want one word for both). |
 | `UPLOADS_DIR` | no | Where uploaded films are written. Defaults to `./uploads`. |
-| `CLOUDINARY_CLOUD_NAME` / `_API_KEY` / `_API_SECRET` | no | Only if you *want* Cloudinary. Leave empty to store files on disk. |
+| `BUNNY_STREAM_LIBRARY_ID` / `BUNNY_STREAM_API_KEY` | for videos | The Bunny Stream library id and its API key. Server-side only. Without them, video files go to `./uploads/` instead. |
+| `CLOUDINARY_CLOUD_NAME` / `_API_KEY` / `_API_SECRET` | for posters | Posters go to Cloudinary; empty means `./uploads/`. |
 | `RESEND_API_KEY` / `NOTIFY_EMAIL` | no | Sends *her* a short email when a new film or episode goes up. With them empty nothing is sent and uploads behave exactly the same. `NOTIFY_FROM` overrides the sender (default `onboarding@resend.dev`, which only delivers to your own Resend account address until you verify a domain). |
 | `PUBLIC_SITE_URL` | no | Used to put a working "open it" link in that email, e.g. `https://my-love-plum-five.vercel.app`. |
 
@@ -161,17 +169,47 @@ database has no saved version.
 
 ---
 
-## 6. Cloudinary (optional)
+## 6. Bunny Stream (videos) + Cloudinary (posters)
 
-Only needed if you'd rather not keep films on the server's disk — for example
-on **Vercel**, where films must live in Cloudinary (see §11).
+### Bunny Stream — the films
+
+1. <https://bunny.net> → sign up, then **Stream** → **Add Video Library**.
+2. Open the library: its id is in the URL (`/stream/libraries/<id>/…`) and the
+   **API Key** is on the library's *API* tab.
+3. Put them in `.env`:
+
+   ```bash
+   BUNNY_STREAM_LIBRARY_ID=123456
+   BUNNY_STREAM_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+   ```
+
+4. Restart the API. `GET /api/health` now says `"bunny":true`.
+
+On `/upload`, a chosen video is uploaded **from the browser** to Bunny in
+resumable chunks (`tus-js-client`), with a real progress bar and the line
+"Uploading 700 MB — don't close this tab". The server only mints a short-lived
+signature (`POST /api/bunny/create-upload`), so the API key never reaches the
+browser. Each film is stored as:
+
+| Column | Contents |
+| --- | --- |
+| `bunny_id` | Bunny's video GUID (used to delete the video later) |
+| `video_url` | `https://player.mediadelivery.net/embed/<library>/<id>` |
+| `poster_url` | Cloudinary (or disk) poster |
+
+Films and episodes then play in Bunny's iframe player — adaptive quality, and
+the player handles fullscreen/rotation itself.
+
+### Cloudinary — the posters
 
 1. Create a free account at <https://cloudinary.com>.
 2. Dashboard → copy **Cloud name**, **API Key**, **API Secret**.
 3. Put them in `.env` as `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`,
    `CLOUDINARY_API_SECRET`.
-4. Restart the API. New uploads go to Cloudinary and `video_url` becomes an
-   `https://res.cloudinary.com/...` link. Nothing else changes.
+4. Restart the API. Posters uploaded through `/upload` become
+   `https://res.cloudinary.com/...` links.
+
+Cloudinary is **no longer used for video** — only posters.
 
 ---
 
@@ -305,24 +343,24 @@ Testing on her phone: run `npm run dev`, then open
 
 Your stack is **Neon** (database) + **Vercel** (site and API). Both are wired up
 in this repo — `vercel.json` and `api/index.js` run the Express app as a
-Vercel function. But Vercel cannot hold films, so you need **one more account:
-Cloudinary (free)**.
+Vercel function. But Vercel cannot hold video, so films live on **Bunny Stream**
+and posters on **Cloudinary**.
 
-### Why Cloudinary is needed here
+### Why
 
 - Vercel functions have no permanent disk: anything written at runtime is gone
   on the next request.
 - A Vercel request body is capped at about **4.5 MB**, so a real film cannot be
   uploaded through the API at all.
+- So the browser uploads straight to Bunny (chunked, resumable), and Neon stores
+  the title, `bunny_id` and playback URL.
 
-So: Cloudinary stores the video files, Neon stores titles / episodes / the
-letter, Vercel serves the code.
+### 1. Bunny Stream + Cloudinary
 
-### 1. Cloudinary — the extra account (5 minutes)
-
-1. <https://cloudinary.com> → sign up free (25 GB storage + 25 GB/month
-   bandwidth, plenty for a gift).
-2. Dashboard → copy **Cloud name**, **API Key**, **API Secret**.
+1. <https://bunny.net> → **Stream** → add a video library. Copy the **library
+   id** (from the URL) and the **API key** (library → API).
+2. <https://cloudinary.com> → free account → copy **Cloud name**, **API Key**,
+   **API Secret** (for posters).
 
 ### 2. Vercel project
 
@@ -336,46 +374,43 @@ letter, Vercel serves the code.
    | `DATABASE_URL` | your Neon connection string (`postgresql://…-pooler…`) |
    | `UPLOAD_PASSCODE` | your passphrase (not `newton`) |
    | `SITE_PASSCODE` | the word that opens the whole site (optional; falls back to `UPLOAD_PASSCODE`) |
-   | `CLOUDINARY_CLOUD_NAME` | from the Cloudinary dashboard |
-   | `CLOUDINARY_API_KEY` | from the Cloudinary dashboard |
-   | `CLOUDINARY_API_SECRET` | from the Cloudinary dashboard |
+   | `BUNNY_STREAM_LIBRARY_ID` | your Stream library id |
+   | `BUNNY_STREAM_API_KEY` | the library's API key |
+   | `CLOUDINARY_CLOUD_NAME` | from the Cloudinary dashboard (posters) |
+   | `CLOUDINARY_API_KEY` | from the Cloudinary dashboard (posters) |
+   | `CLOUDINARY_API_SECRET` | from the Cloudinary dashboard (posters) |
    | `RESEND_API_KEY` | optional — new-film emails (resend.com → API Keys) |
    | `NOTIFY_EMAIL` | optional — her address |
    | `PUBLIC_SITE_URL` | optional — `https://your-app.vercel.app`, for email links |
 
 4. **Deploy**.
 5. Check `https://your-app.vercel.app/api/health` → it should say
-   `"storage":"cloudinary"`. If it says `"disk"`, the Cloudinary variables
-   didn't reach the function — fix them and **Redeploy** (env changes only
-   apply to new deployments).
+   `"bunny":true,"storage":"cloudinary"`. If not, the variables didn't reach
+   the function — fix them and **Redeploy** (env changes only apply to new
+   deployments).
 6. That URL is the link you send her. It works on any phone, no Wi-Fi needed.
 
 ### Getting films in on Vercel
 
-- **Small clips** (under ~4 MB): the normal `/upload` form works — the file is
-  copied to Cloudinary before the request ends.
-- **Real films**: upload the file straight into Cloudinary
-  (Media Library → **Upload**), then copy its delivery URL
-  (`https://res.cloudinary.com/<cloud>/video/upload/v…/film.mp4`) and paste it
-  into the **…or a video URL** field on `/upload`. Posters work the same way.
-  The player uses the URL directly, so there is no size limit.
-- **Direct browser upload (no size limit, wired up now):** create an *unsigned*
-  upload preset in the Cloudinary dashboard (Settings → Upload → Upload presets
-  → Add → Signing Mode: **Unsigned**). Then set these Vercel env vars and
-  redeploy (VITE_ vars are baked into the build):
+- **Videos** go from the browser straight to Bunny Stream (TUS, chunked,
+  resumable) — no size limit, nothing touches Vercel's 4.5 MB cap. The form
+  shows the file size, a progress bar and "don't close this tab" while it runs.
+  You can also paste an existing Bunny playback URL into **…or a video URL**.
+- **Posters** can go straight to Cloudinary too: create an *unsigned* upload
+  preset (Settings → Upload → Upload presets → Add → Signing Mode: **Unsigned**)
+  and set these Vercel env vars, then redeploy (VITE_ vars are baked in):
 
   | Name | Value |
   | --- | --- |
   | `VITE_CLOUDINARY_CLOUD_NAME` | your cloud name |
   | `VITE_CLOUDINARY_UPLOAD_PRESET` | the unsigned preset name |
 
-  With those set, `/upload` sends real films straight to Cloudinary from the
-  browser, then stores the returned URL. The form shows
-  "goes straight to cloudinary — no size limit" under the video field.
+  Without them, posters are posted to the API (fine under 4.5 MB, resized
+  images are).
 
 ### Post-deploy checklist
 
-- `/api/health` → `{"ok":true,…,"storage":"cloudinary"}`.
+- `/api/health` → `{"ok":true,…,"bunny":true,"storage":"cloudinary"}`.
 - Add one film and one series, open `/series/:id` on your phone, and let an
   episode roll into the next.
 - Save the letter at `/letter` once — it lives in Neon, so it survives

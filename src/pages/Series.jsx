@@ -4,7 +4,8 @@ import Header from '../components/Header';
 import Poster from '../components/Poster';
 import { api, formatDuration, formatClock, getUploadKey } from '../lib/api';
 import { attachFullscreenRotation } from '../lib/fullscreenRotate';
-import { directUploadReady, uploadToCloudinary } from '../lib/cloudinaryUpload';
+import { fileSizeLabel, uploadToBunny } from '../lib/bunnyUpload';
+import { attachBunnyListeners, isBunnyUrl } from '../lib/bunnyPlayer';
 import { clearProgress, episodeKey, getProgress, saveProgress } from '../lib/progress';
 
 export default function Series() {
@@ -21,6 +22,7 @@ export default function Series() {
   const [newEpisode, setNewEpisode] = useState({ title: '', url: '', file: null });
   const [addBusy, setAddBusy] = useState(false);
   const [addProgress, setAddProgress] = useState(null);
+  const [addLabel, setAddLabel] = useState('');
   const [resumedAt, setResumedAt] = useState(null);
   const videoRef = useRef(null);
   const lastSaved = useRef(0);
@@ -110,24 +112,59 @@ export default function Series() {
     if (index + 1 < episodes.length) setIndex(index + 1);
   }
 
+  // Episodes on Bunny play in its iframe; listen there so they still roll on.
+  useEffect(() => {
+    if (!current || !isBunnyUrl(current.video_url)) return undefined;
+    const iframe = document.getElementById('bunny-player');
+    return attachBunnyListeners(iframe, {
+      onEnded: () => {
+        clearProgress(episodeKey(current.id));
+        if (index + 1 < episodes.length) setIndex(index + 1);
+      },
+      onTime: ({ seconds, duration }) => {
+        if (!Number.isFinite(seconds) || !Number.isFinite(duration)) return;
+        const now = Date.now();
+        if (now - lastSaved.current < 5000) return;
+        lastSaved.current = now;
+        saveProgress(episodeKey(current.id), {
+          t: seconds,
+          d: duration,
+          title: current.title || `Episode ${current.episode_number}`,
+          href: `/series/${id}`,
+          kind: 'episode',
+          id: current.id,
+        });
+      },
+    });
+  }, [current, index, episodes.length, id]);
+
   async function addEpisode(event) {
     event.preventDefault();
     setAddBusy(true);
     setError('');
     setAddProgress(null);
     try {
-      let videoUrl = newEpisode.url.trim();
-      if (directUploadReady && newEpisode.file) {
-        setAddProgress(0);
-        videoUrl = await uploadToCloudinary(newEpisode.file, 'video', (p) =>
-          setAddProgress(p)
-        );
-        setAddProgress(100);
-      }
       const data = new FormData();
       data.append('title', newEpisode.title.trim());
-      if (videoUrl) data.append('video_url', videoUrl);
-      if (!directUploadReady && newEpisode.file) data.append('video', newEpisode.file);
+
+      if (newEpisode.file) {
+        setAddProgress(0);
+        setAddLabel(
+          `Uploading ${fileSizeLabel(newEpisode.file.size)} — don't close this tab`
+        );
+        const uploaded = await uploadToBunny(newEpisode.file, {
+          title:
+            newEpisode.title.trim() ||
+            `${series?.title || 'Episode'} — ${episodes.length + 1}`,
+          onProgress: setAddProgress,
+        });
+        data.append('playback_url', uploaded.playbackUrl);
+        data.append('bunny_id', uploaded.bunnyId);
+        setAddProgress(100);
+      } else if (newEpisode.url.trim()) {
+        data.append('video_url', newEpisode.url.trim());
+      }
+
       const result = await api.addEpisode(id, data);
       setEpisodes((prev) => [...prev, result.episode]);
       setNewEpisode({ title: '', url: '', file: null });
@@ -137,6 +174,7 @@ export default function Series() {
     } finally {
       setAddBusy(false);
       setAddProgress(null);
+      setAddLabel('');
     }
   }
 
@@ -190,21 +228,33 @@ export default function Series() {
 
         <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-soft">
           {current ? (
-            <video
-              key={current.id}
-              ref={videoRef}
-              controls
-              playsInline
-              preload="metadata"
-              poster={series.poster_url || undefined}
-              src={current.video_url}
-              onEnded={handleEnded}
-              onLoadedMetadata={handleMetadata}
-              onTimeUpdate={handleTimeUpdate}
-              className="aspect-video w-full bg-black"
-            >
-              Your browser can&rsquo;t play this episode.
-            </video>
+            isBunnyUrl(current.video_url) ? (
+              <iframe
+                id="bunny-player"
+                key={current.id}
+                src={current.video_url}
+                title={current.title || `Episode ${current.episode_number}`}
+                loading="lazy"
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                className="aspect-video w-full border-0 bg-black"
+              />
+            ) : (
+              <video
+                key={current.id}
+                ref={videoRef}
+                controls
+                playsInline
+                preload="metadata"
+                poster={series.poster_url || undefined}
+                src={current.video_url}
+                onEnded={handleEnded}
+                onLoadedMetadata={handleMetadata}
+                onTimeUpdate={handleTimeUpdate}
+                className="aspect-video w-full bg-black"
+              >
+                Your browser can&rsquo;t play this episode.
+              </video>
+            )
           ) : (
             <div className="grid aspect-video place-items-center text-cream/40">
               No episodes yet.
@@ -406,10 +456,12 @@ export default function Series() {
                     />
                   </div>
                   {addProgress !== null && (
-                    <div className="mt-3 space-y-1.5">
-                      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-cream/40">
-                        <span>uploading to cloudinary</span>
-                        <span>{addProgress}%</span>
+                                          <div className="mt-3 space-y-1.5">
+                      <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.22em] text-cream/40">
+                        <span className="normal-case tracking-normal text-[12px] text-cream/65">
+                          {addLabel || 'uploading'}
+                        </span>
+                        <span className="shrink-0 text-rose-soft">{addProgress}%</span>
                       </div>
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                         <div

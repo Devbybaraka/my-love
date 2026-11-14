@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { api, GENRES, getUploadKey, setUploadKey } from '../lib/api';
 import { directUploadReady, uploadToCloudinary } from '../lib/cloudinaryUpload';
+import { fileSizeLabel, uploadToBunny } from '../lib/bunnyUpload';
 
 const EMPTY = {
   title: '',
@@ -30,6 +31,8 @@ export default function Upload() {
   const [shelf, setShelf] = useState({ movies: [], series: [] });
   const [removing, setRemoving] = useState(null);
   const [errorLog, setErrorLog] = useState(null);
+  const [bunny, setBunny] = useState(false);
+  const [progressLabel, setProgressLabel] = useState('');
 
   useEffect(() => {
     if (!unlocked) return;
@@ -44,6 +47,15 @@ export default function Upload() {
       alive = false;
     };
   }, [unlocked, created]);
+
+  // Videos live on Bunny Stream; without its keys we fall back to this
+  // server's own disk so local work isn't blocked.
+  useEffect(() => {
+    fetch('/api/health')
+      .then((r) => r.json())
+      .then((data) => setBunny(Boolean(data.bunny)))
+      .catch(() => setBunny(false));
+  }, []);
 
   useEffect(() => {
     if (!unlocked) return;
@@ -105,39 +117,58 @@ export default function Upload() {
     setBusy(true);
 
     try {
-      // On Vercel (or whenever direct upload is configured) send real films
-      // straight to Cloudinary from the browser, so we never hit the API's
-      // ~4.5 MB body cap. The resulting URL is then stored like any other.
+      // Posters: straight to Cloudinary when the unsigned preset is configured,
+      // otherwise the server stores them.
       let posterUrl = form.poster_url.trim();
-      let videoUrl = form.video_url.trim();
-      const episodeUrls = episodes.map((e) => e.url.trim());
-
-      if (directUploadReady) {
+      if (directUploadReady && posterFile) {
         setProgress(0);
-        if (posterFile) {
-          posterUrl = await uploadToCloudinary(posterFile, 'poster', (p) =>
-            setProgress(Math.round(p * 0.2))
-          );
-        }
-        if (mode === 'film' && videoFile) {
-          videoUrl = await uploadToCloudinary(videoFile, 'video', (p) =>
-            setProgress(posterFile ? 20 + Math.round(p * 0.8) : p)
-          );
-        }
-        if (mode === 'series') {
-          const withFiles = episodes.filter((e) => e.file).length || 1;
-          let done = 0;
-          for (let i = 0; i < episodes.length; i += 1) {
-            if (episodes[i].file) {
-              const base = Math.round((done / withFiles) * 100);
-              episodeUrls[i] = await uploadToCloudinary(episodes[i].file, 'video', (p) =>
-                setProgress(base + Math.round(p / withFiles))
-              );
-              done += 1;
-            }
-          }
-        }
+        setProgressLabel('uploading the poster');
+        posterUrl = await uploadToCloudinary(posterFile, 'poster', setProgress);
+      }
+
+      // Videos: direct to Bunny Stream over TUS (chunked, resumable), so a
+      // 700 MB film never touches our API or Vercel's body cap.
+      let videoUrl = form.video_url.trim();
+      let bunnyId = '';
+      let playbackUrl = '';
+      const episodeUrls = episodes.map((e) => e.url.trim());
+      const episodeBunnyIds = episodes.map(() => '');
+      const episodePlaybacks = episodes.map(() => '');
+
+      if (bunny && mode === 'film' && videoFile) {
+        setProgress(0);
+        setProgressLabel(
+          `Uploading ${fileSizeLabel(videoFile.size)} — don't close this tab`
+        );
+        const uploaded = await uploadToBunny(videoFile, {
+          title: form.title.trim() || videoFile.name,
+          onProgress: setProgress,
+        });
+        bunnyId = uploaded.bunnyId;
+        playbackUrl = uploaded.playbackUrl;
         setProgress(100);
+      }
+
+      if (bunny && mode === 'series') {
+        const total = episodes.filter((e) => e.file).length;
+        let done = 0;
+        for (let i = 0; i < episodes.length; i += 1) {
+          const file = episodes[i].file;
+          if (!file) continue;
+          setProgress(Math.round((done / Math.max(1, total)) * 100));
+          setProgressLabel(
+            `Uploading episode ${i + 1} (${fileSizeLabel(file.size)}) — don't close this tab`
+          );
+          const uploaded = await uploadToBunny(file, {
+            title: episodes[i].title.trim() || `${form.title.trim()} — episode ${i + 1}`,
+            onProgress: (p) =>
+              setProgress(Math.round(((done + p / 100) / Math.max(1, total)) * 100)),
+          });
+          episodeBunnyIds[i] = uploaded.bunnyId;
+          episodePlaybacks[i] = uploaded.playbackUrl;
+          done += 1;
+          setProgress(Math.round((done / Math.max(1, total)) * 100));
+        }
       }
 
       const data = new FormData();
@@ -146,21 +177,32 @@ export default function Upload() {
       data.append('genre', form.genre);
       if (form.year) data.append('year', form.year);
       if (posterUrl) data.append('poster_url', posterUrl);
-      // Only send the raw file when we are NOT doing direct upload.
+      // Only send the raw poster file when there is no direct upload.
       if (!directUploadReady && posterFile) data.append('poster', posterFile);
 
       if (mode === 'film') {
-        if (videoUrl) data.append('video_url', videoUrl);
-        if (!directUploadReady && videoFile) data.append('video', videoFile);
+        if (playbackUrl) {
+          data.append('playback_url', playbackUrl);
+          data.append('bunny_id', bunnyId);
+        } else if (videoUrl) {
+          data.append('video_url', videoUrl);
+        }
+        // Disk fallback for local work without Bunny keys.
+        if (!bunny && videoFile) data.append('video', videoFile);
+
         const result = await api.createMovie(data);
         setCreated({ kind: 'film', id: result.movie.id, title: result.movie.title });
       } else {
-        // One numbered trio per row, so the server pairs them without guessing.
+        // One numbered trio (+ Bunny ids) per row, so the server pairs them up.
         data.append('episode_count', String(episodes.length));
         episodes.forEach((episode, index) => {
           data.append(`episode_title_${index}`, episode.title.trim());
           data.append(`episode_video_url_${index}`, episodeUrls[index]);
-          if (!directUploadReady && episode.file) {
+          if (episodePlaybacks[index]) {
+            data.append(`episode_playback_url_${index}`, episodePlaybacks[index]);
+            data.append(`episode_bunny_id_${index}`, episodeBunnyIds[index]);
+          }
+          if (!bunny && episode.file) {
             data.append(`episode_video_${index}`, episode.file);
           }
         });
@@ -187,6 +229,7 @@ export default function Upload() {
     } finally {
       setBusy(false);
       setProgress(null);
+      setProgressLabel('');
     }
   }
 
@@ -404,9 +447,13 @@ export default function Upload() {
                     onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                     className="w-full rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-3 text-xs text-cream/50 file:mr-3 file:rounded-full file:border-0 file:bg-rose/15 file:px-3 file:py-1.5 file:text-[10px] file:uppercase file:tracking-widest file:text-rose-soft"
                   />
-                  {directUploadReady && (
+                  {bunny ? (
                     <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-cream/35">
-                      goes straight to cloudinary — no size limit
+                      goes straight to bunny stream — chunked, no size limit
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-rose/60">
+                      bunny stream keys aren&rsquo;t set — a big film will fail here
                     </p>
                   )}
                   <input
@@ -487,10 +534,12 @@ export default function Upload() {
             )}
 
             {progress !== null && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-cream/40">
-                  <span>uploading to cloudinary</span>
-                  <span>{progress}%</span>
+              <div className="space-y-2 rounded-2xl border border-rose/20 bg-rose/[0.06] p-4">
+                <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.22em] text-cream/50">
+                  <span className="normal-case tracking-normal text-[12px] text-cream/70">
+                    {progressLabel || 'uploading'}
+                  </span>
+                  <span className="shrink-0 text-rose-soft">{progress}%</span>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                   <div

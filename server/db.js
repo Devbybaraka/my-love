@@ -27,6 +27,7 @@ export const SCHEMA = `
     year INT,
     poster_url TEXT,
     video_url TEXT NOT NULL,
+    bunny_id TEXT,
     created_at TIMESTAMP DEFAULT NOW()
   );
 
@@ -46,6 +47,7 @@ export const SCHEMA = `
     episode_number INT NOT NULL,
     title TEXT,
     video_url TEXT NOT NULL,
+    bunny_id TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     UNIQUE (series_id, episode_number)
   );
@@ -79,4 +81,7 @@ export const SCHEMA = `
 
 export async function initSchema() {
   await pool.query(SCHEMA);
+  // Migrate older databases that predate these columns.
+  await pool.query(`ALTER TABLE movies ADD COLUMN IF NOT EXISTS bunny_id TEXT`).catch(() => {});
+  await pool.query(`ALTER TABLE episodes ADD COLUMN IF NOT EXISTS bunny_id TEXT`).catch(() => {});
 }

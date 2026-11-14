@@ -49,6 +49,17 @@ export const api = {
 
   closeDoor: () => fetch('/api/access', { method: 'DELETE' }).then(read),
 
+  /* Bunny Stream: mint a signature for one direct upload */
+  createBunnyUpload: (title) =>
+    fetch('/api/bunny/create-upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-upload-key': getUploadKey(),
+      },
+      body: JSON.stringify({ title }),
+    }).then(read),
+
   listMovies: () => fetch('/api/movies').then(read),
 
   getMovie: (id) => fetch(`/api/movies/${id}`).then(read),

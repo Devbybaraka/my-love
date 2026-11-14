@@ -5,6 +5,7 @@ import Poster from '../components/Poster';
 import { api, formatDuration, formatClock, getUploadKey } from '../lib/api';
 import { attachFullscreenRotation } from '../lib/fullscreenRotate';
 import { clearProgress, filmKey, getProgress, saveProgress } from '../lib/progress';
+import { attachBunnyListeners, isBunnyUrl } from '../lib/bunnyPlayer';
 
 export default function Watch() {
   const { id } = useParams();
@@ -50,6 +51,29 @@ export default function Watch() {
 
   useEffect(() => {
     return attachFullscreenRotation(videoRef.current);
+  }, [movie]);
+
+  // Bunny films play in its iframe; remember the spot from its timeupdate.
+  useEffect(() => {
+    if (!movie || !isBunnyUrl(movie.video_url)) return undefined;
+    const iframe = document.getElementById('bunny-player');
+    return attachBunnyListeners(iframe, {
+      onEnded: () => clearProgress(filmKey(movie.id)),
+      onTime: ({ seconds, duration }) => {
+        if (!Number.isFinite(seconds) || !Number.isFinite(duration)) return;
+        const now = Date.now();
+        if (now - lastSaved.current < 5000) return;
+        lastSaved.current = now;
+        saveProgress(filmKey(movie.id), {
+          t: seconds,
+          d: duration,
+          title: movie.title,
+          href: `/watch/${movie.id}`,
+          kind: 'film',
+          id: movie.id,
+        });
+      },
+    });
   }, [movie]);
 
   /* Pick up where we left off (this device only). */
@@ -166,24 +190,36 @@ export default function Watch() {
         </Link>
 
         <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-soft">
-          <video
-            key={movie.id}
-            ref={videoRef}
-            controls
-            playsInline
-            preload="metadata"
-            poster={movie.poster_url || undefined}
-            src={movie.video_url}
-            onLoadedMetadata={handleMetadata}
-            onTimeUpdate={handleTimeUpdate}
-            onEnded={() => {
-              clearProgress(filmKey(movie.id));
-              setResumedAt(null);
-            }}
-            className="aspect-video w-full bg-black"
-          >
-            Your browser can&rsquo;t play this film.
-          </video>
+          {isBunnyUrl(movie.video_url) ? (
+            <iframe
+              id="bunny-player"
+              key={movie.id}
+              src={movie.video_url}
+              title={movie.title}
+              loading="lazy"
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              className="aspect-video w-full border-0 bg-black"
+            />
+          ) : (
+            <video
+              key={movie.id}
+              ref={videoRef}
+              controls
+              playsInline
+              preload="metadata"
+              poster={movie.poster_url || undefined}
+              src={movie.video_url}
+              onLoadedMetadata={handleMetadata}
+              onTimeUpdate={handleTimeUpdate}
+              onEnded={() => {
+                clearProgress(filmKey(movie.id));
+                setResumedAt(null);
+              }}
+              className="aspect-video w-full bg-black"
+            >
+              Your browser can&rsquo;t play this film.
+            </video>
+          )}
         </div>
 
         {resumedAt !== null && (

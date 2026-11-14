@@ -1,7 +1,7 @@
 // Direct browser → Cloudinary upload using an *unsigned* upload preset.
-// Used for real films (> ~4.5 MB) on Vercel, where the API body cap would
-// reject them. When these VITE_ vars are absent, uploads fall back to the
-// backend (disk or server-side Cloudinary) — i.e. local dev / disk hosts.
+// Cloudinary now stores POSTERS ONLY — videos go to Bunny Stream (see
+// src/lib/bunnyUpload.js). When these VITE_ vars are absent, the poster is
+// sent to the backend and stored there instead.
 
 export const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
 export const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '';
@@ -10,18 +10,18 @@ export const directUploadReady = Boolean(CLOUD_NAME && UPLOAD_PRESET);
 
 // Uploads `file` directly to Cloudinary. `onProgress` (optional) receives a
 // number 0..100 as bytes are sent, so the UI can show a progress bar.
-export function uploadToCloudinary(file, kind = 'video', onProgress) {
+export function uploadToCloudinary(file, kind = 'poster', onProgress) {
   if (!directUploadReady) {
     return Promise.reject(new Error('Direct Cloudinary upload is not configured.'));
   }
-  const resourceType = kind === 'poster' || kind === 'image' ? 'image' : 'video';
-  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+  // Posters only — films are uploaded to Bunny Stream.
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
   return new Promise((resolve, reject) => {
     const form = new FormData();
     form.append('file', file);
     form.append('upload_preset', UPLOAD_PRESET);
-    form.append('folder', `our-movie-corner/${resourceType === 'video' ? 'films' : 'posters'}`);
+    form.append('folder', 'our-movie-corner/posters');
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
