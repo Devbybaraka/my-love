@@ -37,8 +37,8 @@ export default function Door({ onUnlocked }) {
         </div>
         <h1 className="font-display text-3xl text-cream">Just for us.</h1>
         <p className="mx-auto mt-3 max-w-[17rem] text-sm leading-relaxed text-cream/45">
-          There is a letter in here, and a little cinema. Say the word we picked
-          and it&rsquo;s yours.
+          There is a little cinema with free movies for you, baby. Say the word
+          and it opens.
         </p>
 
         <input

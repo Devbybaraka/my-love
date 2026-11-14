@@ -37,7 +37,7 @@ npm run db:init         # creates the `movies` and `letter` tables
 | `DATABASE_URL` | yes | Your Neon connection string (Project → Connection Details → copy the **pooled** string). Keep `?sslmode=require` at the end. |
 | `PORT` | no | API port. Defaults to `4000`. The Vite dev server proxies `/api` and `/uploads` here. |
 | `UPLOAD_PASSCODE` | **yes (set one)** | The word you type on `/upload` and `/letter`. It is also sent as the `x-upload-key` header for the API. |
-| `SITE_PASSCODE` | no | The word that opens the **whole site** (the letter and the films). Defaults to `UPLOAD_PASSCODE` when empty, so one word does both jobs. |
+| `SITE_PASSCODE` | **set a simple one** | The word she types to open the **whole site** (films + letter). Make it short and easy to remember — it is *not* the upload word. Leave empty to reuse `UPLOAD_PASSCODE` (only if you want one word for both). |
 | `UPLOADS_DIR` | no | Where uploaded films are written. Defaults to `./uploads`. |
 | `CLOUDINARY_CLOUD_NAME` / `_API_KEY` / `_API_SECRET` | no | Only if you *want* Cloudinary. Leave empty to store files on disk. |
 | `RESEND_API_KEY` / `NOTIFY_EMAIL` | no | Sends *her* a short email when a new film or episode goes up. With them empty nothing is sent and uploads behave exactly the same. `NOTIFY_FROM` overrides the sender (default `onboarding@resend.dev`, which only delivers to your own Resend account address until you verify a domain). |
