@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { api, GENRES, getUploadKey, setUploadKey } from '../lib/api';
+import { directUploadReady, uploadToCloudinary } from '../lib/cloudinaryUpload';
 
 const EMPTY = {
   title: '',
@@ -57,17 +58,39 @@ export default function Upload() {
     setBusy(true);
 
     try {
+      // On Vercel (or whenever direct upload is configured) send real films
+      // straight to Cloudinary from the browser, so we never hit the API's
+      // ~4.5 MB body cap. The resulting URL is then stored like any other.
+      let posterUrl = form.poster_url.trim();
+      let videoUrl = form.video_url.trim();
+      const episodeUrls = episodes.map((e) => e.url.trim());
+
+      if (directUploadReady) {
+        if (posterFile) posterUrl = await uploadToCloudinary(posterFile, 'poster');
+        if (mode === 'film' && videoFile) {
+          videoUrl = await uploadToCloudinary(videoFile, 'video');
+        }
+        if (mode === 'series') {
+          for (let i = 0; i < episodes.length; i += 1) {
+            if (episodes[i].file) {
+              episodeUrls[i] = await uploadToCloudinary(episodes[i].file, 'video');
+            }
+          }
+        }
+      }
+
       const data = new FormData();
       data.append('title', form.title.trim());
       data.append('description', form.description.trim());
       data.append('genre', form.genre);
       if (form.year) data.append('year', form.year);
-      if (form.poster_url.trim()) data.append('poster_url', form.poster_url.trim());
-      if (posterFile) data.append('poster', posterFile);
+      if (posterUrl) data.append('poster_url', posterUrl);
+      // Only send the raw file when we are NOT doing direct upload.
+      if (!directUploadReady && posterFile) data.append('poster', posterFile);
 
       if (mode === 'film') {
-        if (form.video_url.trim()) data.append('video_url', form.video_url.trim());
-        if (videoFile) data.append('video', videoFile);
+        if (videoUrl) data.append('video_url', videoUrl);
+        if (!directUploadReady && videoFile) data.append('video', videoFile);
         const result = await api.createMovie(data);
         setCreated({ kind: 'film', id: result.movie.id, title: result.movie.title });
       } else {
@@ -75,8 +98,10 @@ export default function Upload() {
         data.append('episode_count', String(episodes.length));
         episodes.forEach((episode, index) => {
           data.append(`episode_title_${index}`, episode.title.trim());
-          data.append(`episode_video_url_${index}`, episode.url.trim());
-          if (episode.file) data.append(`episode_video_${index}`, episode.file);
+          data.append(`episode_video_url_${index}`, episodeUrls[index]);
+          if (!directUploadReady && episode.file) {
+            data.append(`episode_video_${index}`, episode.file);
+          }
         });
         const result = await api.createSeries(data);
         setCreated({
@@ -317,6 +342,11 @@ export default function Upload() {
                     onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                     className="w-full rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-3 text-xs text-cream/50 file:mr-3 file:rounded-full file:border-0 file:bg-rose/15 file:px-3 file:py-1.5 file:text-[10px] file:uppercase file:tracking-widest file:text-rose-soft"
                   />
+                  {directUploadReady && (
+                    <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-cream/35">
+                      goes straight to cloudinary — no size limit
+                    </p>
+                  )}
                   <input
                     type="url"
                     value={form.video_url}

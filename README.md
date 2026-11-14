@@ -346,8 +346,19 @@ letter, Vercel serves the code.
   (`https://res.cloudinary.com/<cloud>/video/upload/v…/film.mp4`) and paste it
   into the **…or a video URL** field on `/upload`. Posters work the same way.
   The player uses the URL directly, so there is no size limit.
-- Big files uploading straight from the browser to Cloudinary is possible
-  (an unsigned upload preset) — ask if you want it, it isn't wired up yet.
+- **Direct browser upload (no size limit, wired up now):** create an *unsigned*
+  upload preset in the Cloudinary dashboard (Settings → Upload → Upload presets
+  → Add → Signing Mode: **Unsigned**). Then set these Vercel env vars and
+  redeploy (VITE_ vars are baked into the build):
+
+  | Name | Value |
+  | --- | --- |
+  | `VITE_CLOUDINARY_CLOUD_NAME` | your cloud name |
+  | `VITE_CLOUDINARY_UPLOAD_PRESET` | the unsigned preset name |
+
+  With those set, `/upload` sends real films straight to Cloudinary from the
+  browser, then stores the returned URL. The form shows
+  "goes straight to cloudinary — no size limit" under the video field.
 
 ### Post-deploy checklist
 
