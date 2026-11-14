@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Poster from '../components/Poster';
 import { api, formatDuration, getUploadKey } from '../lib/api';
+import { attachFullscreenRotation } from '../lib/fullscreenRotate';
 
 export default function Watch() {
   const { id } = useParams();
@@ -13,6 +14,7 @@ export default function Watch() {
   const [error, setError] = useState('');
   const [duration, setDuration] = useState(null);
   const [confirming, setConfirming] = useState(false);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     let alive = true;
@@ -36,6 +38,10 @@ export default function Watch() {
   }, [id]);
 
   const canDelete = Boolean(getUploadKey());
+
+  useEffect(() => {
+    return attachFullscreenRotation(videoRef.current);
+  }, [movie]);
 
   async function removeMovie() {
     try {
@@ -88,6 +94,7 @@ export default function Watch() {
         <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-soft">
           <video
             key={movie.id}
+            ref={videoRef}
             controls
             playsInline
             preload="metadata"

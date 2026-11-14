@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Poster from '../components/Poster';
 import { api, formatDuration, getUploadKey } from '../lib/api';
+import { attachFullscreenRotation } from '../lib/fullscreenRotate';
 
 export default function Series() {
   const { id } = useParams();
@@ -45,6 +46,10 @@ export default function Series() {
   const canEdit = Boolean(getUploadKey());
 
   const firstEpisode = useRef(true);
+
+  useEffect(() => {
+    return attachFullscreenRotation(videoRef.current);
+  }, [current]);
 
   /* Episodes roll into each other: when one ends (or you pick another),
      the new episode starts playing as soon as it is loaded. */
