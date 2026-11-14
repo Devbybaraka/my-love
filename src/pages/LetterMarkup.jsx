@@ -95,7 +95,7 @@ export default function LetterMarkup({ letter }) {
               </div>
               <div className="photo-copy reveal d1">
                 <p className="kicker">you</p>
-                <p className="quote">&ldquo;Some days arrive ordinary and leave unforgettable. That afternoon, you in the middle of the park, the whole city behind you &mdash; and I remember thinking: <em>this is the view.</em>&rdquo;</p>
+                <p className="quote">&ldquo;Some days arrive ordinary and leave unforgettable. Those days tunaenda resturant nakuangalia unauliza mbona &mdash; im admirimg your beauty: <em>this is the view.</em>&rdquo;</p>
                 <p className="lede">I don&rsquo;t need a special occasion to look at you like that. I do it on Tuesdays.</p>
               </div>
             </div>
@@ -113,7 +113,7 @@ export default function LetterMarkup({ letter }) {
               <button className="flip reveal" aria-label="Little truth one">
                 <span className="flip-inner">
                   <span className="face front"><span className="glyph">♡</span><span className="label">truth one</span></span>
-                  <span className="face back"><span>That thing you do &mdash; laughing at your own jokes before you even finish them. It&rsquo;s my favourite sound in the world.</span></span>
+                  <span className="face back"><span>Unaona tukitembea na wewe then upande stairs&mdash; i just wish i could follow you , so we could spend more time together </span></span>
                 </span>
               </button>
 
@@ -127,7 +127,7 @@ export default function LetterMarkup({ letter }) {
               <button className="flip reveal d2" aria-label="Little truth three">
                 <span className="flip-inner">
                   <span className="face front"><span className="glyph">❀</span><span className="label">truth three</span></span>
-                  <span className="face back"><span>You don&rsquo;t have to have it together around me. Fall apart if you need to. I&rsquo;ll be right here, holding the pieces.</span></span>
+                  <span className="face back"><span>You don&rsquo;t have to have it together around me. Fall apart if you need to. I&rsquo;ll be right here, holding you and carring you.</span></span>
                 </span>
               </button>
 
