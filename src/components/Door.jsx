@@ -1,6 +1,19 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
 
+// Sweet, loving ways to say "that's not the word" — a different one each time,
+// so a wrong guess still feels like love, not a scolding.
+const SWEET_WRONG = [
+  "That's incorrect, my love.",
+  "That's not the one I told you, baby.",
+  "Close, sweetheart — but no.",
+  "Not quite, my love. Try again.",
+  "That isn't it, baby. You know the one.",
+  "Wrong word, but still my favorite person.",
+  "Nope, love. The real one is softer.",
+  "That's not it, sweetheart.",
+];
+
 /**
  * The door. One shared word opens the letter and the films, so the URL on its
  * own shows nothing. The word is checked by the server, never in the browser.
@@ -9,6 +22,7 @@ export default function Door({ onUnlocked }) {
   const [word, setWord] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [lastWrong, setLastWrong] = useState(-1);
 
   async function submit(event) {
     event.preventDefault();
@@ -19,7 +33,16 @@ export default function Door({ onUnlocked }) {
       await api.openDoor(word.trim());
       onUnlocked();
     } catch (err) {
-      setError(err.message);
+      if (err.status === 429) {
+        setError(err.message);
+      } else {
+        let next = Math.floor(Math.random() * SWEET_WRONG.length);
+        if (next === lastWrong && SWEET_WRONG.length > 1) {
+          next = (next + 1) % SWEET_WRONG.length;
+        }
+        setLastWrong(next);
+        setError(SWEET_WRONG[next]);
+      }
       setWord('');
     } finally {
       setBusy(false);
@@ -63,7 +86,7 @@ export default function Door({ onUnlocked }) {
         </button>
 
         <p className="mt-5 font-hand text-lg text-rose/70">
-          for Newton &amp; his girl ♡
+          for Shaniz ♡
         </p>
       </form>
     </div>
