@@ -12,12 +12,16 @@ const EMPTY = {
   video_url: '',
 };
 
+const emptyEpisode = () => ({ title: '', url: '', file: null });
+
 export default function Upload() {
   const [unlocked, setUnlocked] = useState(Boolean(getUploadKey()));
   const [passphrase, setPassphrase] = useState('');
+  const [mode, setMode] = useState('film');
   const [form, setForm] = useState(EMPTY);
   const [posterFile, setPosterFile] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
+  const [episodes, setEpisodes] = useState([emptyEpisode()]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [created, setCreated] = useState(null);
@@ -33,6 +37,20 @@ export default function Upload() {
     setError('');
   }
 
+  function updateEpisode(index, patch) {
+    setEpisodes((prev) =>
+      prev.map((episode, i) => (i === index ? { ...episode, ...patch } : episode))
+    );
+  }
+
+  function addEpisodeRow() {
+    setEpisodes((prev) => [...prev, emptyEpisode()]);
+  }
+
+  function removeEpisodeRow(index) {
+    setEpisodes((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function submit(event) {
     event.preventDefault();
     setError('');
@@ -45,15 +63,39 @@ export default function Upload() {
       data.append('genre', form.genre);
       if (form.year) data.append('year', form.year);
       if (form.poster_url.trim()) data.append('poster_url', form.poster_url.trim());
-      if (form.video_url.trim()) data.append('video_url', form.video_url.trim());
       if (posterFile) data.append('poster', posterFile);
-      if (videoFile) data.append('video', videoFile);
 
-      const result = await api.createMovie(data);
-      setCreated(result.movie);
+      if (mode === 'film') {
+        if (form.video_url.trim()) data.append('video_url', form.video_url.trim());
+        if (videoFile) data.append('video', videoFile);
+        const result = await api.createMovie(data);
+        setCreated({ kind: 'film', id: result.movie.id, title: result.movie.title });
+      } else {
+        const usable = episodes.filter(
+          (episode) => episode.file || episode.url.trim()
+        );
+        if (!usable.length) {
+          throw new Error('A series needs at least one episode with a video.');
+        }
+        episodes.forEach((episode) => {
+          data.append('episode_title', episode.title.trim());
+          data.append('episode_video_url', episode.url.trim());
+          data.append('episode_has_file', episode.file ? '1' : '0');
+          if (episode.file) data.append('episode_video', episode.file);
+        });
+        const result = await api.createSeries(data);
+        setCreated({
+          kind: 'series',
+          id: result.series.id,
+          title: result.series.title,
+          episodes: result.episodeCount,
+        });
+      }
+
       setForm(EMPTY);
       setPosterFile(null);
       setVideoFile(null);
+      setEpisodes([emptyEpisode()]);
       event.target.reset();
     } catch (err) {
       setError(err.message);
@@ -117,8 +159,8 @@ export default function Upload() {
           Add something for us
         </h1>
         <p className="mt-3 max-w-lg text-sm leading-relaxed text-cream/50">
-          Upload a film and it lands in her corner instantly. Poster and video
-          can be files or plain links.
+          Upload a film, or a whole series that rolls from one episode into the
+          next. Poster and video can be files or plain links.
         </p>
         <div className="mt-4 flex flex-wrap gap-5">
           <Link
@@ -138,11 +180,17 @@ export default function Upload() {
         {created && (
           <div className="mt-8 rounded-3xl border border-rose/25 bg-rose/[0.07] p-5">
             <p className="font-display text-xl text-cream">
-              &ldquo;{created.title}&rdquo; is in the corner.
+              &ldquo;{created.title}&rdquo; is in the corner
+              {created.kind === 'series'
+                ? ` — ${created.episodes} episode${created.episodes === 1 ? '' : 's'} queued up.`
+                : '.'}
             </p>
             <div className="mt-3 flex flex-wrap gap-3">
-              <Link to={`/watch/${created.id}`} className="btn-primary">
-                watch it now
+              <Link
+                to={created.kind === 'series' ? `/series/${created.id}` : `/watch/${created.id}`}
+                className="btn-primary"
+              >
+                {created.kind === 'series' ? 'start watching' : 'watch it now'}
               </Link>
               <button
                 type="button"
@@ -155,7 +203,28 @@ export default function Upload() {
           </div>
         )}
 
-        <form onSubmit={submit} className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="mt-8 inline-flex rounded-full border border-white/10 p-1">
+          {[
+            { key: 'film', label: 'a film' },
+            { key: 'series', label: 'a series' },
+          ].map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setMode(option.key)}
+              aria-pressed={mode === option.key}
+              className={`rounded-full px-4 py-2 text-[10px] uppercase tracking-[0.22em] transition ${
+                mode === option.key
+                  ? 'bg-rose/20 text-rose-soft'
+                  : 'text-cream/40 hover:text-cream/75'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={submit} className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="glass space-y-5 rounded-3xl p-6 sm:p-8">
             <div>
               <label className="label" htmlFor="title">
@@ -167,7 +236,7 @@ export default function Upload() {
                 value={form.title}
                 onChange={update('title')}
                 className="field"
-                placeholder="Before Sunrise"
+                placeholder={mode === 'series' ? 'Our slow evenings' : 'Before Sunrise'}
               />
             </div>
 
@@ -240,26 +309,95 @@ export default function Upload() {
                   placeholder="…or a poster URL"
                 />
               </div>
-              <div>
-                <label className="label" htmlFor="video">
-                  Video file
-                </label>
-                <input
-                  id="video"
-                  type="file"
-                  accept="video/*"
-                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                  className="w-full rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-3 text-xs text-cream/50 file:mr-3 file:rounded-full file:border-0 file:bg-rose/15 file:px-3 file:py-1.5 file:text-[10px] file:uppercase file:tracking-widest file:text-rose-soft"
-                />
-                <input
-                  type="url"
-                  value={form.video_url}
-                  onChange={update('video_url')}
-                  className="field mt-3"
-                  placeholder="…or a video URL (mp4)"
-                />
-              </div>
+
+              {mode === 'film' && (
+                <div>
+                  <label className="label" htmlFor="video">
+                    Video file
+                  </label>
+                  <input
+                    id="video"
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                    className="w-full rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-3 text-xs text-cream/50 file:mr-3 file:rounded-full file:border-0 file:bg-rose/15 file:px-3 file:py-1.5 file:text-[10px] file:uppercase file:tracking-widest file:text-rose-soft"
+                  />
+                  <input
+                    type="url"
+                    value={form.video_url}
+                    onChange={update('video_url')}
+                    className="field mt-3"
+                    placeholder="…or a video URL (mp4)"
+                  />
+                </div>
+              )}
             </div>
+
+            {mode === 'series' && (
+              <div className="space-y-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-[9px] uppercase tracking-[0.3em] text-cream/40">
+                    episodes
+                  </p>
+                  <span className="text-[9px] uppercase tracking-[0.2em] text-cream/25">
+                    plays in order
+                  </span>
+                </div>
+
+                {episodes.map((episode, index) => (
+                  <div
+                    key={index}
+                    className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] uppercase tracking-[0.26em] text-rose/60">
+                        episode {index + 1}
+                      </span>
+                      {episodes.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeEpisodeRow(index)}
+                          className="text-[9px] uppercase tracking-[0.2em] text-cream/30 hover:text-rose"
+                        >
+                          remove
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      value={episode.title}
+                      onChange={(e) => updateEpisode(index, { title: e.target.value })}
+                      className="field mt-3"
+                      placeholder="Episode title (optional)"
+                    />
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) =>
+                          updateEpisode(index, { file: e.target.files?.[0] || null })
+                        }
+                        className="w-full rounded-2xl border border-dashed border-white/15 bg-black/10 px-3 py-2.5 text-[11px] text-cream/50 file:mr-2 file:rounded-full file:border-0 file:bg-rose/15 file:px-2.5 file:py-1 file:text-[9px] file:uppercase file:tracking-widest file:text-rose-soft"
+                      />
+                      <input
+                        type="url"
+                        value={episode.url}
+                        onChange={(e) => updateEpisode(index, { url: e.target.value })}
+                        className="field"
+                        placeholder="…or a video URL"
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addEpisodeRow}
+                  className="w-full rounded-2xl border border-dashed border-white/15 py-3 text-[10px] uppercase tracking-[0.22em] text-cream/40 transition hover:border-rose/40 hover:text-rose-soft"
+                >
+                  + add another episode
+                </button>
+              </div>
+            )}
 
             {error && (
               <p className="rounded-2xl border border-rose/30 bg-rose/10 px-4 py-3 text-sm text-rose-soft">
@@ -269,7 +407,11 @@ export default function Upload() {
 
             <div className="flex flex-wrap items-center gap-4 pt-1">
               <button type="submit" disabled={busy} className="btn-primary disabled:opacity-50">
-                {busy ? 'placing it on the shelf…' : 'add to our corner'}
+                {busy
+                  ? 'placing it on the shelf…'
+                  : mode === 'series'
+                    ? 'add the series'
+                    : 'add to our corner'}
               </button>
               <Link
                 to="/movies"
@@ -306,7 +448,7 @@ export default function Upload() {
                 </div>
               </div>
               <p className="mt-3 truncate font-display text-lg text-cream">
-                {form.title || 'Untitled film'}
+                {form.title || 'Untitled'}
               </p>
               <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-cream/35">
                 {[form.year, form.genre].filter(Boolean).join(' · ')}

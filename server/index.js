@@ -39,6 +39,12 @@ const upload = multer({
   limits: { fileSize: 200 * 1024 * 1024 },
 });
 
+function deleteLocalFile(url) {
+  if (url && url.startsWith('/uploads/')) {
+    fs.promises.unlink(path.join(UPLOADS_DIR, path.basename(url))).catch(() => {});
+  }
+}
+
 function keepOnDisk(file, kind) {
   const ext = path.extname(file.filename).toLowerCase();
   const allowed = kind === 'video' ? VIDEO_EXT : IMAGE_EXT;
@@ -210,11 +216,177 @@ app.delete('/api/movies/:id', requireKey, async (req, res, next) => {
     if (!rows.length) return res.status(404).json({ error: 'Movie not found.' });
 
     // remove locally stored files too
-    [rows[0].poster_url, rows[0].video_url].forEach((url) => {
-      if (url && url.startsWith('/uploads/')) {
-        const file = path.join(UPLOADS_DIR, path.basename(url));
-        fs.promises.unlink(file).catch(() => {});
+    [rows[0].poster_url, rows[0].video_url].forEach(deleteLocalFile);
+
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/* ---------------------------- series ---------------------------- */
+app.get('/api/series', async (_req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT s.*,
+              (SELECT COUNT(*) FROM episodes e WHERE e.series_id = s.id)::int AS episode_count
+         FROM series s
+        ORDER BY s.created_at DESC, s.id DESC`
+    );
+    res.json({ series: rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/series/:id', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'That is not a series id.' });
+    }
+    const { rows } = await pool.query('SELECT * FROM series WHERE id = $1', [id]);
+    if (!rows.length) {
+      return res.status(404).json({ error: 'That series is not in our corner yet.' });
+    }
+    const episodes = await pool.query(
+      'SELECT * FROM episodes WHERE series_id = $1 ORDER BY episode_number ASC',
+      [id]
+    );
+    res.json({ series: rows[0], episodes: episodes.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post(
+  '/api/series',
+  requireKey,
+  upload.fields([
+    { name: 'poster', maxCount: 1 },
+    { name: 'episode_video', maxCount: 60 },
+  ]),
+  async (req, res, next) => {
+    try {
+      const body = req.body || {};
+      const title = (body.title || '').trim();
+      if (!title) return res.status(400).json({ error: 'Give the series a title.' });
+
+      const genre = (body.genre || '').trim();
+      const year = body.year ? Number(body.year) : null;
+      if (year !== null && (!Number.isInteger(year) || year < 1888 || year > 2100)) {
+        return res.status(400).json({ error: 'That year looks a little off.' });
       }
+
+      let poster_url = (body.poster_url || '').trim() || null;
+      if (req.files?.poster?.[0]) {
+        poster_url = await storeFile(req.files.poster[0], 'poster');
+      }
+
+      const asArray = (value) => (Array.isArray(value) ? value : value ? [value] : []);
+      const titles = asArray(body.episode_title);
+      const urls = asArray(body.episode_video_url);
+      const hasFile = asArray(body.episode_has_file).map((flag) => String(flag) === '1');
+      const files = req.files?.episode_video || [];
+
+      const total = Math.max(titles.length, urls.length, hasFile.length);
+      const episodes = [];
+      let fileIndex = 0;
+
+      for (let i = 0; i < total; i += 1) {
+        let video = (urls[i] || '').trim();
+        if (hasFile[i] && files[fileIndex]) {
+          video = await storeFile(files[fileIndex], 'video');
+          fileIndex += 1;
+        }
+        if (video) {
+          episodes.push({ title: (titles[i] || '').trim(), video });
+        }
+      }
+
+      if (!episodes.length) {
+        return res.status(400).json({ error: 'A series needs at least one episode.' });
+      }
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const inserted = await client.query(
+          `INSERT INTO series (title, description, genre, year, poster_url)
+           VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+          [title, (body.description || '').trim() || null, genre || null, year, poster_url]
+        );
+        const series = inserted.rows[0];
+
+        for (let i = 0; i < episodes.length; i += 1) {
+          await client.query(
+            `INSERT INTO episodes (series_id, episode_number, title, video_url)
+             VALUES ($1, $2, $3, $4)`,
+            [series.id, i + 1, episodes[i].title || null, episodes[i].video]
+          );
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json({ series, episodeCount: episodes.length });
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+app.post(
+  '/api/series/:id/episodes',
+  requireKey,
+  upload.fields([{ name: 'video', maxCount: 1 }]),
+  async (req, res, next) => {
+    try {
+      const id = Number(req.params.id);
+      const body = req.body || {};
+      let video_url = (body.video_url || '').trim();
+      if (req.files?.video?.[0]) video_url = await storeFile(req.files.video[0], 'video');
+      if (!video_url) {
+        return res.status(400).json({ error: 'Give the episode a video file or URL.' });
+      }
+
+      const { rows: existing } = await pool.query(
+        'SELECT COALESCE(MAX(episode_number), 0)::int AS last FROM episodes WHERE series_id = $1',
+        [id]
+      );
+      const nextNumber = existing[0].last + 1;
+
+      const { rows } = await pool.query(
+        `INSERT INTO episodes (series_id, episode_number, title, video_url)
+         VALUES ($1, $2, $3, $4) RETURNING *`,
+        [id, nextNumber, (body.title || '').trim() || null, video_url]
+      );
+      res.status(201).json({ episode: rows[0] });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+app.delete('/api/series/:id', requireKey, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const { rows } = await pool.query(
+      `SELECT s.poster_url, e.video_url
+         FROM series s LEFT JOIN episodes e ON e.series_id = s.id
+        WHERE s.id = $1`,
+      [id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Series not found.' });
+
+    await pool.query('DELETE FROM series WHERE id = $1', [id]);
+    rows.forEach((row) => {
+      deleteLocalFile(row.poster_url);
+      deleteLocalFile(row.video_url);
     });
 
     res.json({ ok: true });

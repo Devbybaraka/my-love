@@ -46,6 +46,30 @@ export const api = {
       headers: { 'x-upload-key': getUploadKey() },
     }).then(read),
 
+  listSeries: () => fetch('/api/series').then(read),
+
+  getSeries: (id) => fetch(`/api/series/${id}`).then(read),
+
+  createSeries: (formData) =>
+    fetch('/api/series', {
+      method: 'POST',
+      headers: { 'x-upload-key': getUploadKey() },
+      body: formData,
+    }).then(read),
+
+  addEpisode: (id, formData) =>
+    fetch(`/api/series/${id}/episodes`, {
+      method: 'POST',
+      headers: { 'x-upload-key': getUploadKey() },
+      body: formData,
+    }).then(read),
+
+  deleteSeries: (id) =>
+    fetch(`/api/series/${id}`, {
+      method: 'DELETE',
+      headers: { 'x-upload-key': getUploadKey() },
+    }).then(read),
+
   getLetter: () => fetch('/api/letter').then(read),
 
   saveLetter: (letter) =>
@@ -69,5 +93,6 @@ export function formatDuration(seconds) {
     const h = Math.floor(m / 60);
     return `${h}h ${String(m % 60).padStart(2, '0')}m`;
   }
+  if (m === 0) return `${s}s`;
   return `${m}m ${String(s).padStart(2, '0')}s`;
 }

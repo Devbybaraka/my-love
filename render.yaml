@@ -1,0 +1,22 @@
+# Render blueprint: Express + built React app, films kept on a persistent disk.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: our-movie-corner
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: UPLOAD_PASSCODE
+        sync: false
+      - key: UPLOADS_DIR
+        value: /data/uploads
+    disk:
+      name: uploads
+      mountPath: /data
+      sizeGB: 5

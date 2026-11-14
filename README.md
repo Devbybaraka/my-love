@@ -106,6 +106,25 @@ Open the film at `/watch/:id` while you have the passphrase saved in that
 browser. A small **remove this film** link appears at the bottom of the
 description.
 
+### Series — episodes that play one after another
+
+On the same upload page there's a **a film / a series** switch. In series mode
+the single video field becomes a list of episodes:
+
+1. Give the series a **title** (and genre/year/poster, same as a film).
+2. For each episode add an optional **title** plus a **video file or URL**.
+3. **+ add another episode** adds a row; **remove** drops one.
+4. Save. The episodes are numbered in the order they appear on the form.
+
+Watching works like a box set: on `/series/:id` the first episode plays, and
+when it ends **the next one starts by itself**. The episode list underneath is
+clickable, and there's a *skip to episode N* link. A series shows up in
+`/movies` with a small **series** badge and its episode count.
+
+You can add more episodes later: open the series while your passphrase is
+saved and use **+ add another episode** at the bottom. **remove this series**
+takes the whole thing (and its files) off the shelf.
+
 ### Adding films from the terminal (optional)
 
 ```bash
@@ -162,12 +181,30 @@ if you host somewhere with ephemeral storage.
 | GET | `/api/movies/:id` | – | One film + 3 related |
 | POST | `/api/movies` | `x-upload-key` | Create (multipart or URL fields) |
 | DELETE | `/api/movies/:id` | `x-upload-key` | Remove |
+| GET | `/api/series` | – | All series + episode counts |
+| GET | `/api/series/:id` | – | One series + its episodes in order |
+| POST | `/api/series` | `x-upload-key` | Create a series with episodes |
+| POST | `/api/series/:id/episodes` | `x-upload-key` | Append one episode |
+| DELETE | `/api/series/:id` | `x-upload-key` | Remove series + episodes (+ files) |
 | GET | `/api/letter` | – | Saved letter, or `null` |
 | PUT | `/api/letter` | `x-upload-key` | Create/replace the letter |
 
 `POST /api/movies` accepts `multipart/form-data`:
 `title`, `description`, `genre`, `year`, `poster_url`, `video_url`, and the
 optional files `poster` and `video`.
+
+`POST /api/series` takes the same fields plus repeated episode parts, one set
+per episode and in order:
+
+```bash
+curl -X POST http://localhost:4000/api/series \
+  -H "x-upload-key: YOUR_PASSCODE" \
+  -F "title=Our Slow Evenings" -F "genre=Romance" \
+  -F "episode_title=Episode 1" -F "episode_video_url=" -F "episode_has_file=1" \
+  -F "episode_video=@/path/to/episode-1.mp4" \
+  -F "episode_title=Episode 2" -F "episode_video_url=" -F "episode_has_file=1" \
+  -F "episode_video=@/path/to/episode-2.mp4"
+```
 
 ---
 
@@ -195,7 +232,30 @@ CREATE TABLE letter (
 );
 ```
 
-`npm run db:init` creates both if they don't exist.
+```sql
+CREATE TABLE series (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  genre TEXT,
+  year INT,
+  poster_url TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE episodes (
+  id SERIAL PRIMARY KEY,
+  series_id INT NOT NULL REFERENCES series(id) ON DELETE CASCADE,
+  episode_number INT NOT NULL,
+  title TEXT,
+  video_url TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (series_id, episode_number)
+);
+```
+
+`npm run db:init` creates all four tables if they don't exist (it's safe to run
+on an existing database — it only adds).
 
 ---
 
@@ -209,7 +269,8 @@ CREATE TABLE letter (
 | Video area stays black | The URL isn't a direct video file, or the file's codec isn't browser-friendly. Use H.264 `.mp4`. |
 | `The projector isn't warm yet` | API or database is down. Check `http://localhost:4000/api/health` and your `DATABASE_URL`. |
 | Postgres prints an SSL warning | Harmless. `sslmode=require` is treated as `verify-full` by `pg`; it still connects. |
-| Films disappear after a deploy | The host's disk is ephemeral (Vercel, Render free). Use Cloudinary, or a host with a persistent volume. |
+| Films disappear after a deploy | The host's disk is ephemeral (Vercel, Render free). Check `UPLOADS_DIR` points at the mounted disk — see **§11 Deploy**. |
+| Episodes don't roll over | Only `/series/:id` does auto-next (a single film at `/watch/:id` just ends). Browsers also block sound-on autoplay: the next episode starts because you already pressed play once. |
 
 Testing on her phone: run `npm run dev`, then open
 `http://YOUR-COMPUTER-IP:3000` on the same Wi-Fi (the dev server listens on
@@ -225,3 +286,66 @@ Testing on her phone: run `npm run dev`, then open
 - The 7 seeded films are demo entries. Open each one and use
   **remove this film**, then add your own.
 - `uploads/` is gitignored: back it up if those files only exist there.
+
+---
+
+## 11. Deploy (so she can watch on her phone)
+
+The films live on the server's disk, so the host has to give you a **disk that
+survives restarts** — a normal free web service won't. This repo ships the
+pieces for a host that does: `Dockerfile`, `.dockerignore`, `render.yaml`.
+
+The database stays on **Neon** — the host only runs the app. Uploaded films go
+to the mounted disk, film titles/descriptions/episodes go to Neon.
+
+### Render (recommended, ~5 minutes, needs the $7 starter instance for a disk)
+
+1. Push this repo to GitHub (already done if you're reading this there).
+2. <https://dashboard.render.com> → **New → Blueprint** → pick the repo.
+   Render reads `render.yaml` and creates `our-movie-corner` with a 5 GB disk
+   mounted at `/data`.
+3. When it asks for the `sync: false` values, paste:
+   - `DATABASE_URL` — the Neon connection string (the `postgresql://…` one).
+   - `UPLOAD_PASSCODE` — your passphrase (don't leave it as `newton`).
+4. **Apply**. First build takes a few minutes; health check is `/api/health`.
+5. Open the URL Render gives you (e.g. `https://our-movie-corner.onrender.com`).
+   That's the link you send her — it works on any phone, no Wi-Fi needed.
+
+`UPLOADS_DIR=/data/uploads` is already set in `render.yaml`; that's the line
+that makes films outlive a deploy. If Render restarts the service, the films
+are still there.
+
+### Railway / Fly.io / any Docker host
+
+Same image, same three variables, one volume:
+
+```bash
+docker build -t movie-corner .
+docker run -d -p 4000:4000 \
+  -v movie-uploads:/data \
+  -e DATABASE_URL="postgresql://…neon…" \
+  -e UPLOAD_PASSCODE="your-word" \
+  -e UPLOADS_DIR=/data/uploads \
+  movie-corner
+```
+
+- **Railway:** New Project → Deploy from repo → it builds the `Dockerfile` →
+  add a **Volume** mounted at `/data` → set the env vars → generate a domain.
+- **Fly.io:** `fly launch --dockerfile Dockerfile`, then
+  `fly volumes create uploads --size 5`, mount it at `/data` in `fly.toml`,
+  and `fly secrets set DATABASE_URL=… UPLOAD_PASSCODE=…`.
+
+### What to check after deploying
+
+- `https://your-app/api/health` returns `{"ok":true,...,"storage":"disk"}`.
+- Upload one small film from `/upload`, then **restart the service** in the
+  host dashboard and reload the film — if it still plays, the disk is mounted
+  correctly.
+- Open the site on her phone, add it to the home screen; the letter and the
+  movie corner both work in mobile Safari/Chrome.
+
+### Sizes
+
+- Videos up to **200 MB** each (change `limits.fileSize` in `server/index.js`).
+  A 5 GB disk holds roughly 25 such films — plenty for a gift. Raise
+  `sizeGB` in `render.yaml` before the first deploy if you want more.

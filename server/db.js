@@ -30,6 +30,26 @@ export const SCHEMA = `
     created_at TIMESTAMP DEFAULT NOW()
   );
 
+  CREATE TABLE IF NOT EXISTS series (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    genre TEXT,
+    year INT,
+    poster_url TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+
+  CREATE TABLE IF NOT EXISTS episodes (
+    id SERIAL PRIMARY KEY,
+    series_id INT NOT NULL REFERENCES series(id) ON DELETE CASCADE,
+    episode_number INT NOT NULL,
+    title TEXT,
+    video_url TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE (series_id, episode_number)
+  );
+
   CREATE TABLE IF NOT EXISTS letter (
     id INT PRIMARY KEY,
     salutation TEXT NOT NULL DEFAULT 'My dearest,',

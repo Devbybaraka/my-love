@@ -6,8 +6,14 @@ import { api, GENRES } from '../lib/api';
 
 const CATEGORIES = ['All', ...GENRES];
 
+function byNewest(a, b) {
+  const dateA = new Date(a.created_at || 0).getTime();
+  const dateB = new Date(b.created_at || 0).getTime();
+  return dateB - dateA;
+}
+
 export default function Movies() {
-  const [movies, setMovies] = useState([]);
+  const [items, setItems] = useState([]);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
@@ -15,10 +21,13 @@ export default function Movies() {
 
   const load = () => {
     setStatus('loading');
-    api
-      .listMovies()
-      .then((data) => {
-        setMovies(data.movies || []);
+    Promise.all([api.listMovies(), api.listSeries()])
+      .then(([films, series]) => {
+        const merged = [
+          ...(films.movies || []).map((movie) => ({ ...movie, kind: 'movie' })),
+          ...(series.series || []).map((show) => ({ ...show, kind: 'series' })),
+        ].sort(byNewest);
+        setItems(merged);
         setStatus('ready');
       })
       .catch((err) => {
@@ -31,19 +40,19 @@ export default function Movies() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return movies.filter((movie) => {
+    return items.filter((item) => {
       const inCategory =
         category === 'All' ||
-        (movie.genre || '').toLowerCase() === category.toLowerCase();
+        (item.genre || '').toLowerCase() === category.toLowerCase();
       if (!inCategory) return false;
       if (!q) return true;
       return (
-        (movie.title || '').toLowerCase().includes(q) ||
-        (movie.description || '').toLowerCase().includes(q) ||
-        (movie.genre || '').toLowerCase().includes(q)
+        (item.title || '').toLowerCase().includes(q) ||
+        (item.description || '').toLowerCase().includes(q) ||
+        (item.genre || '').toLowerCase().includes(q)
       );
     });
-  }, [movies, query, category]);
+  }, [items, query, category]);
 
   return (
     <div className="min-h-screen aura">
@@ -117,7 +126,7 @@ export default function Movies() {
           <span>
             {status === 'ready'
               ? `${filtered.length} ${
-                  filtered.length === 1 ? 'film' : 'films'
+                  filtered.length === 1 ? 'title' : 'titles'
                 } for us`
               : 'finding the good ones…'}
           </span>
@@ -156,16 +165,16 @@ export default function Movies() {
                 ❦
               </div>
               <p className="font-display text-2xl text-cream">
-                {movies.length === 0
+                {items.length === 0
                   ? 'Our corner is empty — for now.'
                   : 'Nothing matches that, my love.'}
               </p>
               <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-cream/50">
-                {movies.length === 0
+                {items.length === 0
                   ? 'The first film we watch here should be one that makes you feel held. Add it, and it will be waiting for you.'
                   : 'Try another word, or a different mood. I am happy to be wrong about genres.'}
               </p>
-              {movies.length === 0 && (
+              {items.length === 0 && (
                 <Link to="/upload" className="btn-primary mt-7">
                   add our first film
                 </Link>
@@ -175,24 +184,38 @@ export default function Movies() {
 
           {status === 'ready' && filtered.length > 0 && (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-              {filtered.map((movie) => (
-                <Link
-                  key={movie.id}
-                  to={`/watch/${movie.id}`}
-                  className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-rose/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
-                >
-                  <Poster movie={movie} className="aspect-[2/3]" />
-                  <div className="mt-3">
-                    <h2 className="font-display text-[17px] leading-tight text-cream transition group-hover:text-rose-soft">
-                      {movie.title}
-                    </h2>
-                    <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-cream/35">
-                      {[movie.year, movie.genre].filter(Boolean).join(' · ') ||
-                        'a film for us'}
-                    </p>
-                  </div>
-                </Link>
-              ))}
+              {filtered.map((item) => {
+                const isSeries = item.kind === 'series';
+                return (
+                  <Link
+                    key={`${item.kind}-${item.id}`}
+                    to={isSeries ? `/series/${item.id}` : `/watch/${item.id}`}
+                    className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-rose/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
+                  >
+                    <div className="relative">
+                      <Poster movie={item} className="aspect-[2/3]" />
+                      {isSeries && (
+                        <span className="absolute left-3 top-3 rounded-full border border-rose/40 bg-ink/85 px-2.5 py-1 text-[8px] uppercase tracking-[0.24em] text-rose-soft backdrop-blur">
+                          series
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-3">
+                      <h2 className="font-display text-[17px] leading-tight text-cream transition group-hover:text-rose-soft">
+                        {item.title}
+                      </h2>
+                      <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-cream/35">
+                        {isSeries
+                          ? `series · ${item.episode_count} ${
+                              item.episode_count === 1 ? 'episode' : 'episodes'
+                            }`
+                          : [item.year, item.genre].filter(Boolean).join(' · ') ||
+                            'a film for us'}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

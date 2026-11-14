@@ -5,6 +5,7 @@ import Movies from './pages/Movies';
 import Watch from './pages/Watch';
 import Upload from './pages/Upload';
 import LetterEditor from './pages/LetterEditor';
+import Series from './pages/Series';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/watch/:id" element={<Watch />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/letter" element={<LetterEditor />} />
+        <Route path="/series/:id" element={<Series />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
