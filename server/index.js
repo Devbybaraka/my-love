@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { pool, initSchema } from './db.js';
-import { cloudinaryReady, uploadFromPath } from './cloudinary.js';
+import { cloudinaryReady, uploadFromPath, deleteByUrl } from './cloudinary.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -217,8 +217,11 @@ app.delete('/api/movies/:id', requireKey, async (req, res, next) => {
     );
     if (!rows.length) return res.status(404).json({ error: 'Movie not found.' });
 
-    // remove locally stored files too
-    [rows[0].poster_url, rows[0].video_url].forEach(deleteLocalFile);
+    // remove locally stored files and any Cloudinary assets too
+    [rows[0].poster_url, rows[0].video_url].forEach((u) => {
+      deleteLocalFile(u);
+      deleteByUrl(u);
+    });
 
     res.json({ ok: true });
   } catch (error) {
@@ -401,6 +404,8 @@ app.delete('/api/series/:id', requireKey, async (req, res, next) => {
     rows.forEach((row) => {
       deleteLocalFile(row.poster_url);
       deleteLocalFile(row.video_url);
+      deleteByUrl(row.poster_url);
+      deleteByUrl(row.video_url);
     });
 
     res.json({ ok: true });

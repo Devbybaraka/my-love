@@ -20,6 +20,24 @@ if (cloudinaryReady) {
   });
 }
 
+export async function deleteByUrl(url) {
+  if (!cloudinaryReady || !url || !String(url).includes('res.cloudinary.com')) return;
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split('/upload/');
+    if (parts.length < 2) return;
+    let rest = parts[1];
+    rest = rest.replace(/^v\d+\//, '');
+    const lastDot = rest.lastIndexOf('.');
+    const lastSlash = rest.lastIndexOf('/');
+    if (lastDot > lastSlash) rest = rest.slice(0, lastDot);
+    const resourceType = url.includes('/video/') ? 'video' : 'image';
+    await cloudinary.uploader.destroy(rest, { resource_type: resourceType, invalidate: true });
+  } catch {
+    /* best-effort; ignore */
+  }
+}
+
 export function uploadFromPath(filePath, { resourceType = 'image', folder = 'our-movie-corner' } = {}) {
   return new Promise((resolve, reject) => {
     if (!cloudinaryReady) {

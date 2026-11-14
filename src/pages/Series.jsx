@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import Poster from '../components/Poster';
 import { api, formatDuration, getUploadKey } from '../lib/api';
 import { attachFullscreenRotation } from '../lib/fullscreenRotate';
+import { directUploadReady, uploadToCloudinary } from '../lib/cloudinaryUpload';
 
 export default function Series() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ export default function Series() {
   const [adding, setAdding] = useState(false);
   const [newEpisode, setNewEpisode] = useState({ title: '', url: '', file: null });
   const [addBusy, setAddBusy] = useState(false);
+  const [addProgress, setAddProgress] = useState(null);
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -71,11 +73,20 @@ export default function Series() {
     event.preventDefault();
     setAddBusy(true);
     setError('');
+    setAddProgress(null);
     try {
+      let videoUrl = newEpisode.url.trim();
+      if (directUploadReady && newEpisode.file) {
+        setAddProgress(0);
+        videoUrl = await uploadToCloudinary(newEpisode.file, 'video', (p) =>
+          setAddProgress(p)
+        );
+        setAddProgress(100);
+      }
       const data = new FormData();
       data.append('title', newEpisode.title.trim());
-      if (newEpisode.url.trim()) data.append('video_url', newEpisode.url.trim());
-      if (newEpisode.file) data.append('video', newEpisode.file);
+      if (videoUrl) data.append('video_url', videoUrl);
+      if (!directUploadReady && newEpisode.file) data.append('video', newEpisode.file);
       const result = await api.addEpisode(id, data);
       setEpisodes((prev) => [...prev, result.episode]);
       setNewEpisode({ title: '', url: '', file: null });
@@ -84,6 +95,7 @@ export default function Series() {
       setError(err.message);
     } finally {
       setAddBusy(false);
+      setAddProgress(null);
     }
   }
 
@@ -335,6 +347,20 @@ export default function Series() {
                       className="field"
                     />
                   </div>
+                  {addProgress !== null && (
+                    <div className="mt-3 space-y-1.5">
+                      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-cream/40">
+                        <span>uploading to cloudinary</span>
+                        <span>{addProgress}%</span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full bg-rose/70 transition-all"
+                          style={{ width: `${addProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                   {error && <p className="mt-3 text-sm text-rose-soft">{error}</p>}
                   <div className="mt-4 flex items-center gap-4">
                     <button type="submit" disabled={addBusy} className="btn-primary disabled:opacity-50">

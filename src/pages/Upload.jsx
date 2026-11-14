@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { api, GENRES, getUploadKey, setUploadKey } from '../lib/api';
@@ -24,8 +24,46 @@ export default function Upload() {
   const [videoFile, setVideoFile] = useState(null);
   const [episodes, setEpisodes] = useState([emptyEpisode()]);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(null);
   const [error, setError] = useState('');
   const [created, setCreated] = useState(null);
+  const [shelf, setShelf] = useState({ movies: [], series: [] });
+  const [removing, setRemoving] = useState(null);
+
+  useEffect(() => {
+    if (!unlocked) return;
+    let alive = true;
+    Promise.all([api.listMovies(), api.listSeries()])
+      .then(([m, s]) => {
+        if (!alive) return;
+        setShelf({ movies: m.movies || [], series: s.series || [] });
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [unlocked, created]);
+
+  async function removeFromShelf(kind, id) {
+    setRemoving(id);
+    setError('');
+    try {
+      if (kind === 'film') await api.deleteMovie(id);
+      else await api.deleteSeries(id);
+      setShelf((prev) => ({
+        movies: kind === 'film' ? prev.movies.filter((m) => m.id !== id) : prev.movies,
+        series: kind === 'series' ? prev.series.filter((s) => s.id !== id) : prev.series,
+      }));
+    } catch (err) {
+      setError(err.message);
+      if (/passphrase/i.test(err.message)) {
+        setUploadKey('');
+        setUnlocked(false);
+      }
+    } finally {
+      setRemoving(null);
+    }
+  }
 
   const update = (key) => (event) =>
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
@@ -66,17 +104,31 @@ export default function Upload() {
       const episodeUrls = episodes.map((e) => e.url.trim());
 
       if (directUploadReady) {
-        if (posterFile) posterUrl = await uploadToCloudinary(posterFile, 'poster');
+        setProgress(0);
+        if (posterFile) {
+          posterUrl = await uploadToCloudinary(posterFile, 'poster', (p) =>
+            setProgress(Math.round(p * 0.2))
+          );
+        }
         if (mode === 'film' && videoFile) {
-          videoUrl = await uploadToCloudinary(videoFile, 'video');
+          videoUrl = await uploadToCloudinary(videoFile, 'video', (p) =>
+            setProgress(posterFile ? 20 + Math.round(p * 0.8) : p)
+          );
         }
         if (mode === 'series') {
+          const withFiles = episodes.filter((e) => e.file).length || 1;
+          let done = 0;
           for (let i = 0; i < episodes.length; i += 1) {
             if (episodes[i].file) {
-              episodeUrls[i] = await uploadToCloudinary(episodes[i].file, 'video');
+              const base = Math.round((done / withFiles) * 100);
+              episodeUrls[i] = await uploadToCloudinary(episodes[i].file, 'video', (p) =>
+                setProgress(base + Math.round(p / withFiles))
+              );
+              done += 1;
             }
           }
         }
+        setProgress(100);
       }
 
       const data = new FormData();
@@ -125,6 +177,7 @@ export default function Upload() {
       }
     } finally {
       setBusy(false);
+      setProgress(null);
     }
   }
 
@@ -424,6 +477,21 @@ export default function Upload() {
               </div>
             )}
 
+            {progress !== null && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-cream/40">
+                  <span>uploading to cloudinary</span>
+                  <span>{progress}%</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-rose/70 transition-all"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {error && (
               <p className="rounded-2xl border border-rose/30 bg-rose/10 px-4 py-3 text-sm text-rose-soft">
                 {error}
@@ -490,6 +558,63 @@ export default function Upload() {
             </div>
           </aside>
         </form>
+
+        {unlocked && (shelf.movies.length > 0 || shelf.series.length > 0) && (
+          <section className="mt-12">
+            <p className="mb-4 flex items-center gap-3 text-[9px] uppercase tracking-[0.4em] text-gold">
+              on our shelf
+              <span className="h-px w-12 bg-gradient-to-r from-gold/60 to-transparent" />
+            </p>
+            <div className="space-y-3">
+              {shelf.movies.map((movie) => (
+                <div
+                  key={`m-${movie.id}`}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-display text-[16px] text-cream/85">
+                      {movie.title}
+                    </p>
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-cream/30">
+                      film · {movie.genre || '—'} {movie.year ? `· ${movie.year}` : ''}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={removing === movie.id}
+                    onClick={() => removeFromShelf('film', movie.id)}
+                    className="text-[10px] uppercase tracking-[0.22em] text-cream/30 transition hover:text-rose disabled:opacity-50"
+                  >
+                    {removing === movie.id ? 'removing…' : 'remove'}
+                  </button>
+                </div>
+              ))}
+              {shelf.series.map((s) => (
+                <div
+                  key={`s-${s.id}`}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-display text-[16px] text-cream/85">
+                      {s.title}
+                    </p>
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-cream/30">
+                      series · {s.episode_count || 0} episodes
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={removing === s.id}
+                    onClick={() => removeFromShelf('series', s.id)}
+                    className="text-[10px] uppercase tracking-[0.22em] text-cream/30 transition hover:text-rose disabled:opacity-50"
+                  >
+                    {removing === s.id ? 'removing…' : 'remove'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
