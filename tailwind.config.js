@@ -4,34 +4,42 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#08070c',
-        coal: '#0d0a12',
-        plum: '#161020',
-        wine: '#1e1420',
-        rose: {
-          DEFAULT: '#f2b8be',
-          soft: '#f8d6d9',
-          deep: '#d98b98',
-          dusk: '#8a5560',
-        },
+        // Light luxury palette
+        cream: '#FDF8F3',
+        sand: '#EFE6DA',
+        ivory: '#FFFFFF',
+        ink: '#1A1A1A',
+        muted: '#6B6259',
         gold: {
-          DEFAULT: '#e8c58c',
-          soft: '#f6e3bc',
-          deep: '#b8934f',
+          DEFAULT: '#C5A253',
+          soft: '#E7D3A6',
+          deep: '#A8873D',
         },
-        cream: '#fbf3ec',
+        blush: {
+          DEFAULT: '#F8E1E7',
+          soft: '#FDF1F4',
+          deep: '#B5768A',
+        },
       },
       fontFamily: {
-        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        display: ['"Playfair Display"', 'Georgia', 'serif'],
         hand: ['Caveat', 'cursive'],
-        sans: ['Poppins', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      letterSpacing: {
+        luxe: '0.3em',
       },
       boxShadow: {
-        soft: '0 30px 70px -30px rgba(0,0,0,.85)',
-        glow: '0 0 50px -12px rgba(242,184,190,.45)',
+        soft: '0 28px 70px -34px rgba(26,26,26,0.20), 0 2px 6px rgba(26,26,26,0.03)',
+        hair: '0 1px 2px rgba(26,26,26,0.05)',
+        gold: '0 18px 40px -22px rgba(197,162,83,0.55)',
+        glow: '0 18px 44px -26px rgba(197,162,83,0.45)',
+      },
+      borderRadius: {
+        luxe: '4px',
       },
       animation: {
-        'fade-up': 'fadeUp .8s cubic-bezier(.16,.8,.3,1) both',
+        'fade-up': 'fadeUp .9s cubic-bezier(.16,.8,.3,1) both',
         'soft-pulse': 'softPulse 4s ease-in-out infinite',
       },
       keyframes: {
@@ -40,7 +48,7 @@ export default {
           '100%': { opacity: 1, transform: 'none' },
         },
         softPulse: {
-          '0%,100%': { opacity: 0.5 },
+          '0%,100%': { opacity: 0.45 },
           '50%': { opacity: 1 },
         },
       },

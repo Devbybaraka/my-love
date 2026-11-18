@@ -45,10 +45,10 @@ export function useLetterEffects(rootRef) {
       c.width = c.height = s;
       const g = c.getContext('2d');
       const grd = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-      grd.addColorStop(0, 'rgba(255,251,240,1)');
-      grd.addColorStop(0.22, 'rgba(255,244,220,0.62)');
-      grd.addColorStop(0.55, 'rgba(255,236,200,0.14)');
-      grd.addColorStop(1, 'rgba(255,230,190,0)');
+      grd.addColorStop(0, 'rgba(197,162,83,1)');
+      grd.addColorStop(0.22, 'rgba(197,162,83,0.55)');
+      grd.addColorStop(0.55, 'rgba(181,118,138,0.16)');
+      grd.addColorStop(1, 'rgba(181,118,138,0)');
       g.fillStyle = grd;
       g.fillRect(0, 0, s, s);
       return c;
@@ -632,7 +632,7 @@ export function useLetterEffects(rootRef) {
           else cCtx.lineTo(px, py);
         }
         cCtx.closePath();
-        cCtx.strokeStyle = 'rgba(248,230,187,0.07)';
+        cCtx.strokeStyle = 'rgba(26,26,26,0.09)';
         cCtx.lineWidth = 1;
         cCtx.stroke();
 
@@ -650,12 +650,12 @@ export function useLetterEffects(rootRef) {
             cx + scale * 16,
             cy + scale * 13
           );
-          grad.addColorStop(0, 'rgba(248,230,187,0.95)');
-          grad.addColorStop(0.5, 'rgba(233,174,181,0.9)');
-          grad.addColorStop(1, 'rgba(248,230,187,0.85)');
+          grad.addColorStop(0, 'rgba(197,162,83,0.95)');
+          grad.addColorStop(0.5, 'rgba(181,118,138,0.85)');
+          grad.addColorStop(1, 'rgba(197,162,83,0.9)');
           cCtx.strokeStyle = grad;
           cCtx.lineWidth = 1.35;
-          cCtx.shadowColor = 'rgba(248,230,187,0.65)';
+          cCtx.shadowColor = 'rgba(197,162,83,0.45)';
           cCtx.shadowBlur = 12;
           cCtx.stroke();
           cCtx.shadowBlur = 0;

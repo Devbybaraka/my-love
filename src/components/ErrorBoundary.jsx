@@ -25,13 +25,13 @@ export default class ErrorBoundary extends Component {
     return (
       <div className="aura flex min-h-screen items-center justify-center px-5 py-16">
         <div className="glass w-full max-w-md rounded-3xl p-8 text-center">
-          <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-full border border-rose/30 bg-rose/10 text-rose-soft">
+          <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-full border border-gold/30 bg-blush-soft text-gold-deep">
             ❦
           </div>
-          <p className="font-display text-2xl text-cream">
+          <p className="font-display text-2xl text-ink">
             Something flickered on our side.
           </p>
-          <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-cream/50">
+          <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-ink/55">
             Not your fault, love. I&rsquo;ve been told about it. Try once more.
           </p>
           <button

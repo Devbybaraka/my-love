@@ -50,16 +50,16 @@ export default function Door({ onUnlocked }) {
   }
 
   return (
-    <div className="aura flex min-h-screen items-center justify-center px-5 py-16">
+    <div className="aura flex min-h-screen items-center justify-center bg-cream px-5 py-16">
       <form
         onSubmit={submit}
-        className="glass w-full max-w-sm rounded-3xl p-8 text-center animate-fade-up"
+        className="w-full max-w-sm animate-fade-up rounded-[26px] border border-gold/25 bg-white p-9 text-center shadow-soft"
       >
-        <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-full border border-rose/30 bg-rose/10 text-rose-soft">
+        <div className="mx-auto mb-6 grid h-14 w-14 place-items-center rounded-full border border-gold/35 bg-blush-soft text-[15px] text-gold">
           ♥
         </div>
-        <h1 className="font-display text-3xl text-cream">Just for us.</h1>
-        <p className="mx-auto mt-3 max-w-[17rem] text-sm leading-relaxed text-cream/45">
+        <h1 className="font-display text-[34px] leading-tight text-ink">Just for us.</h1>
+        <p className="mx-auto mt-3 max-w-[17rem] text-sm leading-relaxed text-ink/55">
           There is a little cinema with free movies for you, baby. Say the word
           and it opens.
         </p>
@@ -71,12 +71,12 @@ export default function Door({ onUnlocked }) {
           placeholder="our word"
           autoFocus
           autoComplete="current-password"
-          className="field mt-6 text-center"
+          className="field mt-7 text-center"
           aria-label="Our word"
         />
 
         {error && (
-          <p className="mt-3 rounded-2xl border border-rose/30 bg-rose/10 px-4 py-2.5 text-sm text-rose-soft">
+          <p className="mt-3 rounded-2xl border border-blush-deep/25 bg-blush-soft px-4 py-2.5 text-sm text-blush-deep">
             {error}
           </p>
         )}
@@ -85,7 +85,7 @@ export default function Door({ onUnlocked }) {
           {busy ? 'opening…' : 'open it'}
         </button>
 
-        <p className="mt-5 font-hand text-lg text-rose/70">
+        <p className="mt-6 font-hand text-[22px] text-gold-deep">
           for Shaniz ♡
         </p>
       </form>

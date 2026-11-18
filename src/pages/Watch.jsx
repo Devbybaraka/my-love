@@ -156,7 +156,7 @@ export default function Watch() {
       <div className="min-h-screen aura">
         <Header />
         <div className="shell pt-10">
-          <div className="aspect-video w-full animate-pulse rounded-3xl border border-white/5 bg-white/[0.03]" />
+          <div className="aspect-video w-full animate-pulse rounded-3xl border border-ink/[0.06] bg-blush-soft" />
         </div>
       </div>
     );
@@ -167,8 +167,8 @@ export default function Watch() {
       <div className="min-h-screen aura">
         <Header />
         <div className="shell flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <p className="font-display text-3xl text-cream">That one isn&rsquo;t here.</p>
-          <p className="mt-3 max-w-sm text-sm text-cream/50">{error}</p>
+          <p className="font-display text-3xl text-ink">That one isn&rsquo;t here.</p>
+          <p className="mt-3 max-w-sm text-sm text-ink/55">{error}</p>
           <Link to="/movies" className="btn-primary mt-7">
             back to our films
           </Link>
@@ -184,12 +184,12 @@ export default function Watch() {
       <main className="shell pb-24 pt-8 sm:pt-12">
         <Link
           to="/movies"
-          className="mb-6 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.26em] text-cream/40 transition hover:text-rose-soft"
+          className="mb-6 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.26em] text-ink/45 transition hover:text-gold-deep"
         >
           ← our movie corner
         </Link>
 
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-soft">
+        <div className="overflow-hidden rounded-3xl border border-ink/[0.08] bg-white shadow-soft">
           {isBunnyUrl(movie.video_url) ? (
             <iframe
               id="bunny-player"
@@ -198,7 +198,7 @@ export default function Watch() {
               title={movie.title}
               loading="lazy"
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-              className="aspect-video w-full border-0 bg-black"
+              className="aspect-video w-full border-0 bg-white"
             />
           ) : (
             <video
@@ -215,7 +215,7 @@ export default function Watch() {
                 clearProgress(filmKey(movie.id));
                 setResumedAt(null);
               }}
-              className="aspect-video w-full bg-black"
+              className="aspect-video w-full bg-white"
             >
               Your browser can&rsquo;t play this film.
             </video>
@@ -223,7 +223,7 @@ export default function Watch() {
         </div>
 
         {resumedAt !== null && (
-          <p className="mt-3 text-[10px] uppercase tracking-[0.22em] text-cream/35">
+          <p className="mt-3 text-[10px] uppercase tracking-[0.22em] text-ink/40">
             picking up at {formatClock(resumedAt)} —{' '}
             <button
               type="button"
@@ -231,7 +231,7 @@ export default function Watch() {
                 if (videoRef.current) videoRef.current.currentTime = 0;
                 setResumedAt(null);
               }}
-              className="underline decoration-cream/20 underline-offset-4 transition hover:text-rose-soft"
+              className="underline decoration-ink/20 underline-offset-4 transition hover:text-gold-deep"
             >
               start from the beginning
             </button>
@@ -244,7 +244,7 @@ export default function Watch() {
               now playing
               <span className="h-px w-10 bg-gradient-to-r from-gold/60 to-transparent" />
             </p>
-            <h1 className="font-display text-[clamp(2rem,6vw,3.2rem)] leading-tight text-cream">
+            <h1 className="font-display text-[clamp(2rem,6vw,3.2rem)] leading-tight text-ink">
               {movie.title}
             </h1>
 
@@ -254,25 +254,25 @@ export default function Watch() {
                 .map((meta) => (
                   <span
                     key={meta}
-                    className="rounded-full border border-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-cream/50"
+                    className="rounded-full border border-ink/[0.08] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-ink/55"
                   >
                     {meta}
                   </span>
                 ))}
             </div>
 
-            <p className="mt-6 max-w-2xl whitespace-pre-line text-[15px] leading-[1.9] text-cream/65">
+            <p className="mt-6 max-w-2xl whitespace-pre-line text-[15px] leading-[1.9] text-ink/65">
               {movie.description ||
                 'No description yet — but I picked this one for you, and that says enough.'}
             </p>
 
-            <p className="mt-8 font-hand text-2xl text-rose/80">
+            <p className="mt-8 font-hand text-2xl text-blush-deep">
               Press play. I&rsquo;ll be right here. ♡
             </p>
 
             {/* her notes */}
-            <section className="mt-10 border-t border-white/5 pt-7">
-              <p className="text-[9px] uppercase tracking-[0.32em] text-gold/80">
+            <section className="mt-10 border-t border-ink/[0.06] pt-7">
+              <p className="text-[9px] uppercase tracking-[0.32em] text-gold">
                 {notes.length ? 'what she thought' : 'leave a note'}
               </p>
 
@@ -301,7 +301,7 @@ export default function Watch() {
                     {noteBusy ? 'sending…' : 'leave it'}
                   </button>
                 </div>
-                {noteError && <p className="text-sm text-rose-soft">{noteError}</p>}
+                {noteError && <p className="text-sm text-gold-deep">{noteError}</p>}
               </form>
 
               {notes.length > 0 && (
@@ -309,23 +309,23 @@ export default function Watch() {
                   {notes.map((note) => (
                     <li
                       key={note.id}
-                      className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
+                      className="rounded-2xl border border-ink/[0.08] bg-white px-4 py-3"
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <p className="whitespace-pre-line text-[14px] leading-relaxed text-cream/70">
+                        <p className="whitespace-pre-line text-[14px] leading-relaxed text-ink/70">
                           {note.body}
                         </p>
                         {canDelete && (
                           <button
                             type="button"
                             onClick={() => removeNote(note.id)}
-                            className="shrink-0 text-[9px] uppercase tracking-[0.2em] text-cream/25 hover:text-rose"
+                            className="shrink-0 text-[9px] uppercase tracking-[0.2em] text-ink/30 hover:text-blush-deep"
                           >
                             remove
                           </button>
                         )}
                       </div>
-                      <p className="mt-2 text-[9px] uppercase tracking-[0.2em] text-cream/30">
+                      <p className="mt-2 text-[9px] uppercase tracking-[0.2em] text-ink/35">
                         {note.author || 'my love'}
                         {note.created_at
                           ? ` · ${new Date(note.created_at).toLocaleDateString()}`
@@ -338,23 +338,23 @@ export default function Watch() {
             </section>
 
             {canDelete && (
-              <div className="mt-8 border-t border-white/5 pt-6">
+              <div className="mt-8 border-t border-ink/[0.06] pt-6">
                 {confirming ? (
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-xs text-cream/50">
+                    <span className="text-xs text-ink/55">
                       Remove this film from our corner?
                     </span>
                     <button
                       type="button"
                       onClick={removeMovie}
-                      className="rounded-full border border-rose/40 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-rose-soft hover:bg-rose/10"
+                      className="rounded-full border border-gold/45 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-gold-deep hover:bg-blush-soft"
                     >
                       yes, remove
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirming(false)}
-                      className="text-[10px] uppercase tracking-[0.2em] text-cream/40 hover:text-cream"
+                      className="text-[10px] uppercase tracking-[0.2em] text-ink/45 hover:text-ink"
                     >
                       keep it
                     </button>
@@ -363,7 +363,7 @@ export default function Watch() {
                   <button
                     type="button"
                     onClick={() => setConfirming(true)}
-                    className="text-[10px] uppercase tracking-[0.24em] text-cream/25 transition hover:text-rose"
+                    className="text-[10px] uppercase tracking-[0.24em] text-ink/30 transition hover:text-blush-deep"
                   >
                     remove this film
                   </button>
@@ -374,14 +374,14 @@ export default function Watch() {
 
           <aside className="lg:pt-10">
             <div className="glass rounded-3xl p-6">
-              <p className="text-[9px] uppercase tracking-[0.32em] text-cream/35">
+              <p className="text-[9px] uppercase tracking-[0.32em] text-ink/40">
                 a note for you
               </p>
-              <p className="mt-3 font-hand text-[22px] leading-snug text-cream/80">
+              <p className="mt-3 font-hand text-[22px] leading-snug text-ink/80">
                 &ldquo;I&rsquo;d watch the worst film in the world twice if it meant
                 sitting next to you.&rdquo;
               </p>
-              <p className="mt-4 text-[11px] uppercase tracking-[0.24em] text-rose/60">
+              <p className="mt-4 text-[11px] uppercase tracking-[0.24em] text-blush-deep/75">
                 — N
               </p>
             </div>
@@ -391,10 +391,10 @@ export default function Watch() {
         {related.length > 0 && (
           <section className="mt-16">
             <div className="mb-5 flex items-end justify-between">
-              <h2 className="font-display text-2xl text-cream">
+              <h2 className="font-display text-2xl text-ink">
                 You may also like
               </h2>
-              <span className="text-[9px] uppercase tracking-[0.28em] text-cream/30">
+              <span className="text-[9px] uppercase tracking-[0.28em] text-ink/35">
                 for us
               </span>
             </div>
@@ -403,13 +403,13 @@ export default function Watch() {
                 <Link
                   key={item.id}
                   to={`/watch/${item.id}`}
-                  className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+                  className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60"
                 >
                   <Poster movie={item} className="aspect-[2/3]" />
-                  <h3 className="mt-3 font-display text-[15px] leading-tight text-cream/85 transition group-hover:text-rose-soft">
+                  <h3 className="mt-3 font-display text-[15px] leading-tight text-ink/80 transition group-hover:text-gold-deep">
                     {item.title}
                   </h3>
-                  <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-cream/30">
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-ink/35">
                     {[item.year, item.genre].filter(Boolean).join(' · ')}
                   </p>
                 </Link>

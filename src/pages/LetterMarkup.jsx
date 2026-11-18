@@ -14,6 +14,39 @@ function renderParagraph(text) {
   );
 }
 
+/* A little peony in the corner: blush petals, gold leaves. Purely decorative. */
+function PeonyCorner({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 170 170" fill="none" aria-hidden="true" focusable="false">
+      <g stroke="#C5A253" strokeWidth="1.3" strokeLinecap="round" opacity="0.85">
+        <path d="M10 16C44 24 66 44 78 76" />
+        <path d="M16 34C40 40 56 54 64 74" />
+        <path d="M34 12C48 24 56 40 58 58" />
+      </g>
+      <g fill="#C5A253" opacity="0.30">
+        <path d="M30 22c9-6 20-6 27 2-8 8-20 9-27-2Z" />
+        <path d="M46 40c10-2 19 4 22 14-11 2-20-3-22-14Z" />
+        <path d="M22 46c9-4 18 1 21 11-10 3-19-1-21-11Z" />
+      </g>
+      <g fill="#F8E1E7" stroke="#EBD0D9" strokeWidth="1">
+        <circle cx="74" cy="86" r="27" />
+        <circle cx="104" cy="70" r="18" />
+        <circle cx="56" cy="106" r="16" />
+      </g>
+      <g fill="#FDF1F4">
+        <circle cx="74" cy="86" r="16" />
+        <circle cx="104" cy="70" r="7" />
+        <circle cx="56" cy="106" r="6" />
+      </g>
+      <g fill="#C5A253" opacity="0.75">
+        <circle cx="74" cy="86" r="3.4" />
+        <circle cx="104" cy="70" r="2.2" />
+        <circle cx="56" cy="106" r="2" />
+      </g>
+    </svg>
+  );
+}
+
 export default function LetterMarkup({ letter }) {
   const paragraphs = letter.body
     .split(/\n{2,}/)
@@ -36,14 +69,29 @@ export default function LetterMarkup({ letter }) {
 
         
         <section className="hero">
-          <div className="moon" aria-hidden="true"></div>
           <div className="wrap hero-inner" id="heroInner">
-            <p className="kicker">for you &mdash; especially on the heavy days</p>
-            <h1>For <span className="her-name">my love</span>,<em>on a heavy day</em></h1>
-            <p className="sub">I made you a little universe. Every star, every word, every quiet bit of it is yours. Scroll slowly &mdash; it&rsquo;s all for you.</p>
-            <div className="hero-links">
-              <a className="cta" href="#the-letter"><span className="pulse" aria-hidden="true"></span>open what I made you</a>
-              <Link className="cta cta-alt" to="/movies">our movie corner →</Link>
+            <div className="hero-split">
+              <div className="hero-copy">
+                <p className="kicker">for you &mdash; especially on the heavy days</p>
+                <h1>For <span className="her-name">my love</span>,<em>on a heavy day</em></h1>
+                <p className="sub">I made you a little universe. Every star, every word, every quiet bit of it is yours. Scroll slowly &mdash; it&rsquo;s all for you.</p>
+                <div className="hero-links">
+                  <a className="cta" href="#the-letter"><span className="pulse" aria-hidden="true"></span>open what I made you</a>
+                  <Link className="cta cta-alt" to="/movies">our movie corner →</Link>
+                </div>
+              </div>
+
+              <div className="hero-portrait">
+                <div className="frame">
+                  <PeonyCorner className="orn orn-tl" />
+                  <PeonyCorner className="orn orn-br" />
+                  <img
+                    src="/IMG-20260716-WA0018.jpg"
+                    alt="Her, standing in a park in the afternoon sun"
+                    loading="eager"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="scroll-hint" aria-hidden="true"><span className="line"></span>scroll</div>

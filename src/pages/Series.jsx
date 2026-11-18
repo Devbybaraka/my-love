@@ -193,7 +193,7 @@ export default function Series() {
       <div className="min-h-screen aura">
         <Header />
         <div className="shell pt-10">
-          <div className="aspect-video w-full animate-pulse rounded-3xl border border-white/5 bg-white/[0.03]" />
+          <div className="aspect-video w-full animate-pulse rounded-3xl border border-ink/[0.06] bg-blush-soft" />
         </div>
       </div>
     );
@@ -204,8 +204,8 @@ export default function Series() {
       <div className="min-h-screen aura">
         <Header />
         <div className="shell flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <p className="font-display text-3xl text-cream">That series isn&rsquo;t here.</p>
-          <p className="mt-3 max-w-sm text-sm text-cream/50">{error}</p>
+          <p className="font-display text-3xl text-ink">That series isn&rsquo;t here.</p>
+          <p className="mt-3 max-w-sm text-sm text-ink/55">{error}</p>
           <Link to="/movies" className="btn-primary mt-7">
             back to our films
           </Link>
@@ -221,12 +221,12 @@ export default function Series() {
       <main className="shell pb-24 pt-8 sm:pt-12">
         <Link
           to="/movies"
-          className="mb-6 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.26em] text-cream/40 transition hover:text-rose-soft"
+          className="mb-6 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.26em] text-ink/45 transition hover:text-gold-deep"
         >
           ← our movie corner
         </Link>
 
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-soft">
+        <div className="overflow-hidden rounded-3xl border border-ink/[0.08] bg-white shadow-soft">
           {current ? (
             isBunnyUrl(current.video_url) ? (
               <iframe
@@ -236,7 +236,7 @@ export default function Series() {
                 title={current.title || `Episode ${current.episode_number}`}
                 loading="lazy"
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                className="aspect-video w-full border-0 bg-black"
+                className="aspect-video w-full border-0 bg-white"
               />
             ) : (
               <video
@@ -250,20 +250,20 @@ export default function Series() {
                 onEnded={handleEnded}
                 onLoadedMetadata={handleMetadata}
                 onTimeUpdate={handleTimeUpdate}
-                className="aspect-video w-full bg-black"
+                className="aspect-video w-full bg-white"
               >
                 Your browser can&rsquo;t play this episode.
               </video>
             )
           ) : (
-            <div className="grid aspect-video place-items-center text-cream/40">
+            <div className="grid aspect-video place-items-center text-ink/45">
               No episodes yet.
             </div>
           )}
         </div>
 
         {resumedAt !== null && (
-          <p className="mt-3 text-[10px] uppercase tracking-[0.22em] text-cream/35">
+          <p className="mt-3 text-[10px] uppercase tracking-[0.22em] text-ink/40">
             picking up at {formatClock(resumedAt)} —{' '}
             <button
               type="button"
@@ -271,7 +271,7 @@ export default function Series() {
                 if (videoRef.current) videoRef.current.currentTime = 0;
                 setResumedAt(null);
               }}
-              className="underline decoration-cream/20 underline-offset-4 transition hover:text-rose-soft"
+              className="underline decoration-ink/20 underline-offset-4 transition hover:text-gold-deep"
             >
               play this episode from the start
             </button>
@@ -279,7 +279,7 @@ export default function Series() {
         )}
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-rose/70">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-blush-deep/85">
             Episode {current?.episode_number ?? 1} of {episodes.length}
             {index + 1 < episodes.length ? ' · next episode plays automatically' : ' · last one'}
           </p>
@@ -287,7 +287,7 @@ export default function Series() {
             <button
               type="button"
               onClick={() => setIndex(index + 1)}
-              className="text-[10px] uppercase tracking-[0.24em] text-cream/35 hover:text-gold-soft"
+              className="text-[10px] uppercase tracking-[0.24em] text-ink/40 hover:text-gold-deep"
             >
               skip to episode {current.episode_number + 1} →
             </button>
@@ -300,7 +300,7 @@ export default function Series() {
               series
               <span className="h-px w-10 bg-gradient-to-r from-gold/60 to-transparent" />
             </p>
-            <h1 className="font-display text-[clamp(2rem,6vw,3.2rem)] leading-tight text-cream">
+            <h1 className="font-display text-[clamp(2rem,6vw,3.2rem)] leading-tight text-ink">
               {series.title}
             </h1>
 
@@ -310,43 +310,43 @@ export default function Series() {
                 .map((meta) => (
                   <span
                     key={meta}
-                    className="rounded-full border border-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-cream/50"
+                    className="rounded-full border border-ink/[0.08] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-ink/55"
                   >
                     {meta}
                   </span>
                 ))}
               {formatDuration(duration) && (
-                <span className="rounded-full border border-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-cream/50">
+                <span className="rounded-full border border-ink/[0.08] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-ink/55">
                   {formatDuration(duration)} this episode
                 </span>
               )}
             </div>
 
-            <p className="mt-6 max-w-2xl whitespace-pre-line text-[15px] leading-[1.9] text-cream/65">
+            <p className="mt-6 max-w-2xl whitespace-pre-line text-[15px] leading-[1.9] text-ink/65">
               {series.description ||
                 'No description yet — but I picked this one for you, and that says enough.'}
             </p>
 
-            <p className="mt-8 font-hand text-2xl text-rose/80">
+            <p className="mt-8 font-hand text-2xl text-blush-deep">
               Let it run. I&rsquo;ll be right here. ♡
             </p>
 
             {canEdit && (
-              <div className="mt-8 border-t border-white/5 pt-6">
+              <div className="mt-8 border-t border-ink/[0.06] pt-6">
                 {confirming ? (
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-xs text-cream/50">Remove this whole series?</span>
+                    <span className="text-xs text-ink/55">Remove this whole series?</span>
                     <button
                       type="button"
                       onClick={removeSeries}
-                      className="rounded-full border border-rose/40 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-rose-soft hover:bg-rose/10"
+                      className="rounded-full border border-gold/45 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-gold-deep hover:bg-blush-soft"
                     >
                       yes, remove
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirming(false)}
-                      className="text-[10px] uppercase tracking-[0.2em] text-cream/40 hover:text-cream"
+                      className="text-[10px] uppercase tracking-[0.2em] text-ink/45 hover:text-ink"
                     >
                       keep it
                     </button>
@@ -355,7 +355,7 @@ export default function Series() {
                   <button
                     type="button"
                     onClick={() => setConfirming(true)}
-                    className="text-[10px] uppercase tracking-[0.24em] text-cream/25 transition hover:text-rose"
+                    className="text-[10px] uppercase tracking-[0.24em] text-ink/30 transition hover:text-blush-deep"
                   >
                     remove this series
                   </button>
@@ -365,55 +365,55 @@ export default function Series() {
           </div>
 
           <aside className="lg:pt-10">
-            <div className="mb-4 overflow-hidden rounded-2xl border border-white/10">
+            <div className="mb-4 overflow-hidden rounded-2xl border border-ink/[0.08]">
               <div className="aspect-[2/3]">
                 <Poster movie={series} className="h-full w-full" />
               </div>
             </div>
 
             <div className="glass rounded-3xl p-6">
-              <p className="text-[9px] uppercase tracking-[0.32em] text-cream/35">
+              <p className="text-[9px] uppercase tracking-[0.32em] text-ink/40">
                 a note for you
               </p>
-              <p className="mt-3 font-hand text-[22px] leading-snug text-cream/80">
+              <p className="mt-3 font-hand text-[22px] leading-snug text-ink/80">
                 &ldquo;One more episode&rdquo; is my favourite way of saying
                 &ldquo;stay a little longer&rdquo;.
               </p>
-              <p className="mt-4 text-[11px] uppercase tracking-[0.24em] text-rose/60">— N</p>
+              <p className="mt-4 text-[11px] uppercase tracking-[0.24em] text-blush-deep/75">— N</p>
             </div>
           </aside>
         </div>
 
         <section className="mt-14">
-          <h2 className="font-display text-2xl text-cream">Episodes</h2>
-          <div className="mt-4 divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10">
+          <h2 className="font-display text-2xl text-ink">Episodes</h2>
+          <div className="mt-4 divide-y divide-ink/[0.08] overflow-hidden rounded-2xl border border-ink/[0.08]">
             {episodes.map((episode, i) => (
               <button
                 key={episode.id}
                 type="button"
                 onClick={() => setIndex(i)}
                 className={`flex w-full items-center gap-4 px-4 py-3 text-left transition ${
-                  i === index ? 'bg-rose/[0.09]' : 'hover:bg-white/[0.04]'
+                  i === index ? 'bg-blush-soft' : 'hover:bg-blush-soft'
                 }`}
               >
                 <span
                   className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border text-[11px] ${
                     i === index
-                      ? 'border-rose/60 text-rose-soft'
-                      : 'border-white/15 text-cream/40'
+                      ? 'border-gold text-gold-deep'
+                      : 'border-ink/15 text-ink/45'
                   }`}
                 >
                   {episode.episode_number}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-display text-[16px] text-cream/85">
+                  <span className="block truncate font-display text-[16px] text-ink/80">
                     {episode.title || `Episode ${episode.episode_number}`}
                   </span>
-                  <span className="mt-0.5 block text-[9px] uppercase tracking-[0.2em] text-cream/30">
+                  <span className="mt-0.5 block text-[9px] uppercase tracking-[0.2em] text-ink/35">
                     {i === index ? 'playing now' : 'play this one'}
                   </span>
                 </span>
-                <span className="text-cream/25">▶</span>
+                <span className="text-ink/30">▶</span>
               </button>
             ))}
           </div>
@@ -422,7 +422,7 @@ export default function Series() {
             <div className="mt-5">
               {adding ? (
                 <form onSubmit={addEpisode} className="glass rounded-2xl p-5">
-                  <p className="text-[9px] uppercase tracking-[0.3em] text-cream/40">
+                  <p className="text-[9px] uppercase tracking-[0.3em] text-ink/45">
                     add episode {episodes.length + 1}
                   </p>
                   <input
@@ -443,7 +443,7 @@ export default function Series() {
                           file: e.target.files?.[0] || null,
                         }))
                       }
-                      className="w-full rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-3 text-xs text-cream/50 file:mr-3 file:rounded-full file:border-0 file:bg-rose/15 file:px-3 file:py-1.5 file:text-[10px] file:uppercase file:tracking-widest file:text-rose-soft"
+                      className="w-full rounded-2xl border border-dashed border-ink/15 bg-white px-4 py-3 text-xs text-ink/55 file:mr-3 file:rounded-full file:border-0 file:bg-gold/10 file:px-3 file:py-1.5 file:text-[10px] file:uppercase file:tracking-widest file:text-gold-deep"
                     />
                     <input
                       type="url"
@@ -457,21 +457,21 @@ export default function Series() {
                   </div>
                   {addProgress !== null && (
                                           <div className="mt-3 space-y-1.5">
-                      <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.22em] text-cream/40">
-                        <span className="normal-case tracking-normal text-[12px] text-cream/65">
+                      <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.22em] text-ink/45">
+                        <span className="normal-case tracking-normal text-[12px] text-ink/65">
                           {addLabel || 'uploading'}
                         </span>
-                        <span className="shrink-0 text-rose-soft">{addProgress}%</span>
+                        <span className="shrink-0 text-gold-deep">{addProgress}%</span>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
                         <div
-                          className="h-full rounded-full bg-rose/70 transition-all"
+                          className="h-full rounded-full bg-gold transition-all"
                           style={{ width: `${addProgress}%` }}
                         />
                       </div>
                     </div>
                   )}
-                  {error && <p className="mt-3 text-sm text-rose-soft">{error}</p>}
+                  {error && <p className="mt-3 text-sm text-gold-deep">{error}</p>}
                   <div className="mt-4 flex items-center gap-4">
                     <button type="submit" disabled={addBusy} className="btn-primary disabled:opacity-50">
                       {addBusy ? 'adding…' : 'add episode'}
@@ -479,7 +479,7 @@ export default function Series() {
                     <button
                       type="button"
                       onClick={() => setAdding(false)}
-                      className="text-[10px] uppercase tracking-[0.22em] text-cream/35 hover:text-cream"
+                      className="text-[10px] uppercase tracking-[0.22em] text-ink/40 hover:text-ink"
                     >
                       cancel
                     </button>
@@ -489,7 +489,7 @@ export default function Series() {
                 <button
                   type="button"
                   onClick={() => setAdding(true)}
-                  className="text-[10px] uppercase tracking-[0.24em] text-cream/35 transition hover:text-gold"
+                  className="text-[10px] uppercase tracking-[0.24em] text-ink/40 transition hover:text-gold-deep"
                 >
                   + add another episode
                 </button>

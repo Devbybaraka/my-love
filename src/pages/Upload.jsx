@@ -242,11 +242,11 @@ export default function Upload() {
             onSubmit={unlock}
             className="glass w-full max-w-sm rounded-3xl p-8 text-center animate-fade-up"
           >
-            <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-full border border-rose/30 bg-rose/10 text-rose-soft">
+            <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-full border border-gold/30 bg-blush-soft text-gold-deep">
               ♥
             </div>
-            <h1 className="font-display text-3xl text-cream">Just for me.</h1>
-            <p className="mx-auto mt-3 max-w-[16rem] text-sm leading-relaxed text-cream/45">
+            <h1 className="font-display text-3xl text-ink">Just for me.</h1>
+            <p className="mx-auto mt-3 max-w-[16rem] text-sm leading-relaxed text-ink/50">
               This is where I hang our films. Say the word we picked.
             </p>
             <input
@@ -262,7 +262,7 @@ export default function Upload() {
             </button>
             <Link
               to="/movies"
-              className="mt-5 inline-block text-[10px] uppercase tracking-[0.26em] text-cream/30 hover:text-cream/70"
+              className="mt-5 inline-block text-[10px] uppercase tracking-[0.26em] text-ink/35 hover:text-ink/70"
             >
               back to our movies
             </Link>
@@ -280,31 +280,31 @@ export default function Upload() {
           the projection booth
           <span className="h-px w-12 bg-gradient-to-r from-gold/60 to-transparent" />
         </p>
-        <h1 className="font-display text-[clamp(2.1rem,6vw,3.2rem)] leading-tight text-cream">
+        <h1 className="font-display text-[clamp(2.1rem,6vw,3.2rem)] leading-tight text-ink">
           Add something for us
         </h1>
-        <p className="mt-3 max-w-lg text-sm leading-relaxed text-cream/50">
+        <p className="mt-3 max-w-lg text-sm leading-relaxed text-ink/55">
           Upload a film, or a whole series that rolls from one episode into the
           next. Poster and video can be files or plain links.
         </p>
         <div className="mt-4 flex flex-wrap gap-5">
           <Link
             to="/letter"
-            className="text-[10px] uppercase tracking-[0.24em] text-cream/35 hover:text-gold"
+            className="text-[10px] uppercase tracking-[0.24em] text-ink/40 hover:text-gold-deep"
           >
             edit her letter →
           </Link>
           <Link
             to="/movies"
-            className="text-[10px] uppercase tracking-[0.24em] text-cream/35 hover:text-gold"
+            className="text-[10px] uppercase tracking-[0.24em] text-ink/40 hover:text-gold-deep"
           >
             see our corner →
           </Link>
         </div>
 
         {created && (
-          <div className="mt-8 rounded-3xl border border-rose/25 bg-rose/[0.07] p-5">
-            <p className="font-display text-xl text-cream">
+          <div className="mt-8 rounded-3xl border border-gold/25 bg-blush-soft p-5">
+            <p className="font-display text-xl text-ink">
               &ldquo;{created.title}&rdquo; is in the corner
               {created.kind === 'series'
                 ? ` — ${created.episodes} episode${created.episodes === 1 ? '' : 's'} queued up.`
@@ -328,7 +328,7 @@ export default function Upload() {
           </div>
         )}
 
-        <div className="mt-8 inline-flex rounded-full border border-white/10 p-1">
+        <div className="mt-8 inline-flex rounded-full border border-ink/[0.08] p-1">
           {[
             { key: 'film', label: 'a film' },
             { key: 'series', label: 'a series' },
@@ -340,8 +340,8 @@ export default function Upload() {
               aria-pressed={mode === option.key}
               className={`rounded-full px-4 py-2 text-[10px] uppercase tracking-[0.22em] transition ${
                 mode === option.key
-                  ? 'bg-rose/20 text-rose-soft'
-                  : 'text-cream/40 hover:text-cream/75'
+                  ? 'bg-blush text-gold-deep'
+                  : 'text-ink/45 hover:text-ink/75'
               }`}
             >
               {option.label}
@@ -392,7 +392,7 @@ export default function Upload() {
                   className="field"
                 >
                   {GENRES.map((genre) => (
-                    <option key={genre} value={genre} className="bg-ink">
+                    <option key={genre} value={genre} className="bg-cream">
                       {genre}
                     </option>
                   ))}
@@ -424,7 +424,7 @@ export default function Upload() {
                   type="file"
                   accept="image/*"
                   onChange={(e) => setPosterFile(e.target.files?.[0] || null)}
-                  className="w-full rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-3 text-xs text-cream/50 file:mr-3 file:rounded-full file:border-0 file:bg-rose/15 file:px-3 file:py-1.5 file:text-[10px] file:uppercase file:tracking-widest file:text-rose-soft"
+                  className="w-full rounded-2xl border border-dashed border-ink/15 bg-white px-4 py-3 text-xs text-ink/55 file:mr-3 file:rounded-full file:border-0 file:bg-gold/10 file:px-3 file:py-1.5 file:text-[10px] file:uppercase file:tracking-widest file:text-gold-deep"
                 />
                 <input
                   type="url"
@@ -445,14 +445,14 @@ export default function Upload() {
                     type="file"
                     accept="video/*"
                     onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                    className="w-full rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-3 text-xs text-cream/50 file:mr-3 file:rounded-full file:border-0 file:bg-rose/15 file:px-3 file:py-1.5 file:text-[10px] file:uppercase file:tracking-widest file:text-rose-soft"
+                    className="w-full rounded-2xl border border-dashed border-ink/15 bg-white px-4 py-3 text-xs text-ink/55 file:mr-3 file:rounded-full file:border-0 file:bg-gold/10 file:px-3 file:py-1.5 file:text-[10px] file:uppercase file:tracking-widest file:text-gold-deep"
                   />
                   {bunny ? (
-                    <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-cream/35">
+                    <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-ink/40">
                       goes straight to bunny stream — chunked, no size limit
                     </p>
                   ) : (
-                    <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-rose/60">
+                    <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-blush-deep/75">
                       bunny stream keys aren&rsquo;t set — a big film will fail here
                     </p>
                   )}
@@ -468,12 +468,12 @@ export default function Upload() {
             </div>
 
             {mode === 'series' && (
-              <div className="space-y-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="space-y-3 rounded-2xl border border-ink/[0.08] bg-white p-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-[9px] uppercase tracking-[0.3em] text-cream/40">
+                  <p className="text-[9px] uppercase tracking-[0.3em] text-ink/45">
                     episodes
                   </p>
-                  <span className="text-[9px] uppercase tracking-[0.2em] text-cream/25">
+                  <span className="text-[9px] uppercase tracking-[0.2em] text-ink/30">
                     plays in order
                   </span>
                 </div>
@@ -481,17 +481,17 @@ export default function Upload() {
                 {episodes.map((episode, index) => (
                   <div
                     key={index}
-                    className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                    className="rounded-2xl border border-ink/[0.08] bg-white p-4"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] uppercase tracking-[0.26em] text-rose/60">
+                      <span className="text-[9px] uppercase tracking-[0.26em] text-blush-deep/75">
                         episode {index + 1}
                       </span>
                       {episodes.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeEpisodeRow(index)}
-                          className="text-[9px] uppercase tracking-[0.2em] text-cream/30 hover:text-rose"
+                          className="text-[9px] uppercase tracking-[0.2em] text-ink/35 hover:text-blush-deep"
                         >
                           remove
                         </button>
@@ -510,7 +510,7 @@ export default function Upload() {
                         onChange={(e) =>
                           updateEpisode(index, { file: e.target.files?.[0] || null })
                         }
-                        className="w-full rounded-2xl border border-dashed border-white/15 bg-black/10 px-3 py-2.5 text-[11px] text-cream/50 file:mr-2 file:rounded-full file:border-0 file:bg-rose/15 file:px-2.5 file:py-1 file:text-[9px] file:uppercase file:tracking-widest file:text-rose-soft"
+                        className="w-full rounded-2xl border border-dashed border-ink/15 bg-white px-3 py-2.5 text-[11px] text-ink/55 file:mr-2 file:rounded-full file:border-0 file:bg-gold/10 file:px-2.5 file:py-1 file:text-[9px] file:uppercase file:tracking-widest file:text-gold-deep"
                       />
                       <input
                         type="url"
@@ -526,7 +526,7 @@ export default function Upload() {
                 <button
                   type="button"
                   onClick={addEpisodeRow}
-                  className="w-full rounded-2xl border border-dashed border-white/15 py-3 text-[10px] uppercase tracking-[0.22em] text-cream/40 transition hover:border-rose/40 hover:text-rose-soft"
+                  className="w-full rounded-2xl border border-dashed border-ink/15 py-3 text-[10px] uppercase tracking-[0.22em] text-ink/45 transition hover:border-gold/60 hover:text-gold-deep"
                 >
                   + add another episode
                 </button>
@@ -534,16 +534,16 @@ export default function Upload() {
             )}
 
             {progress !== null && (
-              <div className="space-y-2 rounded-2xl border border-rose/20 bg-rose/[0.06] p-4">
-                <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.22em] text-cream/50">
-                  <span className="normal-case tracking-normal text-[12px] text-cream/70">
+              <div className="space-y-2 rounded-2xl border border-gold/20 bg-blush-soft p-4">
+                <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.22em] text-ink/55">
+                  <span className="normal-case tracking-normal text-[12px] text-ink/70">
                     {progressLabel || 'uploading'}
                   </span>
-                  <span className="shrink-0 text-rose-soft">{progress}%</span>
+                  <span className="shrink-0 text-gold-deep">{progress}%</span>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
                   <div
-                    className="h-full rounded-full bg-rose/70 transition-all"
+                    className="h-full rounded-full bg-gold transition-all"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -551,7 +551,7 @@ export default function Upload() {
             )}
 
             {error && (
-              <p className="rounded-2xl border border-rose/30 bg-rose/10 px-4 py-3 text-sm text-rose-soft">
+              <p className="rounded-2xl border border-gold/30 bg-blush-soft px-4 py-3 text-sm text-gold-deep">
                 {error}
               </p>
             )}
@@ -566,7 +566,7 @@ export default function Upload() {
               </button>
               <Link
                 to="/movies"
-                className="text-[10px] uppercase tracking-[0.24em] text-cream/35 hover:text-cream"
+                className="text-[10px] uppercase tracking-[0.24em] text-ink/40 hover:text-ink"
               >
                 see our movies
               </Link>
@@ -575,11 +575,11 @@ export default function Upload() {
 
           <aside className="space-y-4">
             <div className="glass rounded-3xl p-5">
-              <p className="text-[9px] uppercase tracking-[0.3em] text-cream/35">
+              <p className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                 how it will look
               </p>
-              <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
-                <div className="aspect-[2/3] bg-gradient-to-br from-wine via-plum to-coal">
+              <div className="mt-4 overflow-hidden rounded-2xl border border-ink/[0.08]">
+                <div className="aspect-[2/3] bg-gradient-to-br from-blush via-white to-cream">
                   {posterFile || form.poster_url ? (
                     <img
                       src={
@@ -592,25 +592,25 @@ export default function Upload() {
                       }}
                     />
                   ) : (
-                    <div className="grid h-full place-items-center text-3xl text-rose/40">
+                    <div className="grid h-full place-items-center text-3xl text-gold/85">
                       ✦
                     </div>
                   )}
                 </div>
               </div>
-              <p className="mt-3 truncate font-display text-lg text-cream">
+              <p className="mt-3 truncate font-display text-lg text-ink">
                 {form.title || 'Untitled'}
               </p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-cream/35">
+              <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-ink/40">
                 {[form.year, form.genre].filter(Boolean).join(' · ')}
               </p>
             </div>
 
-            <div className="rounded-3xl border border-white/5 p-5">
-              <p className="text-[9px] uppercase tracking-[0.3em] text-gold/70">
+            <div className="rounded-3xl border border-ink/[0.06] p-5">
+              <p className="text-[9px] uppercase tracking-[0.3em] text-gold/85">
                 a small note
               </p>
-              <p className="mt-3 font-hand text-xl leading-snug text-cream/70">
+              <p className="mt-3 font-hand text-xl leading-snug text-ink/70">
                 Keep the descriptions honest. She reads them.
               </p>
             </div>
@@ -627,13 +627,13 @@ export default function Upload() {
               {shelf.movies.map((movie) => (
                 <div
                   key={`m-${movie.id}`}
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-ink/[0.08] bg-white px-4 py-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-display text-[16px] text-cream/85">
+                    <p className="truncate font-display text-[16px] text-ink/80">
                       {movie.title}
                     </p>
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-cream/30">
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-ink/35">
                       film · {movie.genre || '—'} {movie.year ? `· ${movie.year}` : ''}
                     </p>
                   </div>
@@ -641,7 +641,7 @@ export default function Upload() {
                     type="button"
                     disabled={removing === movie.id}
                     onClick={() => removeFromShelf('film', movie.id)}
-                    className="text-[10px] uppercase tracking-[0.22em] text-cream/30 transition hover:text-rose disabled:opacity-50"
+                    className="text-[10px] uppercase tracking-[0.22em] text-ink/35 transition hover:text-blush-deep disabled:opacity-50"
                   >
                     {removing === movie.id ? 'removing…' : 'remove'}
                   </button>
@@ -650,13 +650,13 @@ export default function Upload() {
               {shelf.series.map((s) => (
                 <div
                   key={`s-${s.id}`}
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-ink/[0.08] bg-white px-4 py-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-display text-[16px] text-cream/85">
+                    <p className="truncate font-display text-[16px] text-ink/80">
                       {s.title}
                     </p>
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-cream/30">
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-ink/35">
                       series · {s.episode_count || 0} episodes
                     </p>
                   </div>
@@ -664,7 +664,7 @@ export default function Upload() {
                     type="button"
                     disabled={removing === s.id}
                     onClick={() => removeFromShelf('series', s.id)}
-                    className="text-[10px] uppercase tracking-[0.22em] text-cream/30 transition hover:text-rose disabled:opacity-50"
+                    className="text-[10px] uppercase tracking-[0.22em] text-ink/35 transition hover:text-blush-deep disabled:opacity-50"
                   >
                     {removing === s.id ? 'removing…' : 'remove'}
                   </button>
@@ -692,7 +692,7 @@ export default function Upload() {
                     setError(err.message);
                   }
                 }}
-                className="text-[9px] uppercase tracking-[0.22em] text-cream/30 hover:text-rose"
+                className="text-[9px] uppercase tracking-[0.22em] text-ink/35 hover:text-blush-deep"
               >
                 clear
               </button>
@@ -701,12 +701,12 @@ export default function Upload() {
               {errorLog.slice(0, 8).map((entry) => (
                 <li
                   key={entry.id}
-                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
+                  className="rounded-2xl border border-ink/[0.08] bg-white px-4 py-3"
                 >
-                  <p className="text-[13px] leading-relaxed text-cream/70">
+                  <p className="text-[13px] leading-relaxed text-ink/70">
                     {entry.message}
                   </p>
-                  <p className="mt-1 truncate text-[9px] uppercase tracking-[0.18em] text-cream/25">
+                  <p className="mt-1 truncate text-[9px] uppercase tracking-[0.18em] text-ink/30">
                     {entry.created_at
                       ? new Date(entry.created_at).toLocaleString()
                       : ''}

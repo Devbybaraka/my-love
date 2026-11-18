@@ -47,7 +47,7 @@ export default function App() {
   if (door.status === 'checking') {
     return (
       <div className="aura grid min-h-screen place-items-center">
-        <span className="animate-pulse font-display text-2xl text-cream/40">♥</span>
+        <span className="animate-pulse font-display text-2xl text-ink/45">♥</span>
       </div>
     );
   }

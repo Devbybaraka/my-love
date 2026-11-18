@@ -79,20 +79,20 @@ export default function Movies() {
           <span className="h-px w-12 bg-gradient-to-r from-gold/60 to-transparent" />
         </p>
 
-        <h1 className="font-display text-[clamp(2.4rem,8vw,4rem)] leading-[1.05] text-cream">
+        <h1 className="font-display text-[clamp(2.4rem,8vw,4rem)] leading-[1.05] text-ink">
           Our Movie Corner
         </h1>
-        <p className="mt-3 font-hand text-[26px] leading-tight text-rose">
+        <p className="mt-3 font-hand text-[26px] leading-tight text-blush-deep">
           Pick anything, baby.
         </p>
-        <p className="mt-5 max-w-md text-[14px] leading-relaxed text-cream/50">
+        <p className="mt-5 max-w-md text-[14px] leading-relaxed text-ink/55">
           Every film in here is one I want to watch with you — your head on my
           shoulder, my hand in yours, the world on pause for two hours.
         </p>
 
         {resume.length > 0 && (
           <section className="mt-8">
-            <p className="mb-3 text-[9px] uppercase tracking-[0.34em] text-gold/80">
+            <p className="mb-3 text-[9px] uppercase tracking-[0.34em] text-gold">
               keep going
             </p>
             <div className="no-bar -mx-5 flex gap-3 overflow-x-auto px-5 pb-1 sm:mx-0 sm:px-0">
@@ -100,17 +100,17 @@ export default function Movies() {
                 <Link
                   key={entry.key}
                   to={entry.href}
-                  className="group w-[210px] shrink-0 rounded-2xl border border-white/10 bg-black/20 p-4 transition hover:border-rose/40"
+                  className="group w-[210px] shrink-0 rounded-2xl border border-ink/[0.08] bg-white p-4 transition hover:border-gold/60"
                 >
-                  <p className="truncate font-display text-[15px] text-cream/85 transition group-hover:text-rose-soft">
+                  <p className="truncate font-display text-[15px] text-ink/80 transition group-hover:text-gold-deep">
                     {entry.title || 'Untitled'}
                   </p>
-                  <p className="mt-1 text-[9px] uppercase tracking-[0.2em] text-cream/30">
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.2em] text-ink/35">
                     {formatClock(entry.t)} watched
                   </p>
-                  <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-white/10">
+                  <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-ink/10">
                     <div
-                      className="h-full rounded-full bg-rose/70"
+                      className="h-full rounded-full bg-gold"
                       style={{ width: `${Math.round(progressRatio(entry) * 100)}%` }}
                     />
                   </div>
@@ -123,7 +123,7 @@ export default function Movies() {
         {/* search + filters */}
         <div className="mt-9 space-y-4">
           <div className="relative">
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-cream/30">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink/35">
               ⌕
             </span>
             <input
@@ -138,7 +138,7 @@ export default function Movies() {
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full px-2 py-1 text-[10px] uppercase tracking-widest text-cream/40 hover:text-cream"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full px-2 py-1 text-[10px] uppercase tracking-widest text-ink/45 hover:text-ink"
               >
                 clear
               </button>
@@ -155,8 +155,8 @@ export default function Movies() {
                   onClick={() => setCategory(item)}
                   className={`shrink-0 rounded-full border px-4 py-2 text-[10px] uppercase tracking-[0.2em] transition ${
                     active
-                      ? 'border-rose/60 bg-rose/15 text-rose-soft shadow-glow'
-                      : 'border-white/10 text-cream/45 hover:border-white/25 hover:text-cream/80'
+                      ? 'border-gold bg-blush text-gold-deep shadow-glow'
+                      : 'border-ink/[0.08] text-ink/50 hover:border-ink/25 hover:text-ink/80'
                   }`}
                 >
                   {item}
@@ -167,7 +167,7 @@ export default function Movies() {
         </div>
 
         {/* results */}
-        <div className="mt-8 flex items-center justify-between text-[10px] uppercase tracking-[0.26em] text-cream/30">
+        <div className="mt-8 flex items-center justify-between text-[10px] uppercase tracking-[0.26em] text-ink/35">
           <span>
             {status === 'ready'
               ? `${filtered.length} ${
@@ -175,7 +175,7 @@ export default function Movies() {
                 } for us`
               : 'finding the good ones…'}
           </span>
-          <Link to="/upload" className="text-cream/30 transition hover:text-gold">
+          <Link to="/upload" className="text-ink/35 transition hover:text-gold-deep">
             + add one
           </Link>
         </div>
@@ -186,7 +186,7 @@ export default function Movies() {
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="aspect-[2/3] animate-pulse rounded-2xl border border-white/5 bg-white/[0.03]"
+                  className="aspect-[2/3] animate-pulse rounded-2xl border border-ink/[0.06] bg-blush-soft"
                 />
               ))}
             </div>
@@ -194,10 +194,10 @@ export default function Movies() {
 
           {status === 'error' && (
             <div className="glass rounded-3xl p-8 text-center">
-              <p className="font-display text-2xl text-cream">
+              <p className="font-display text-2xl text-ink">
                 The projector isn&rsquo;t warm yet.
               </p>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-cream/50">{error}</p>
+              <p className="mx-auto mt-2 max-w-sm text-sm text-ink/55">{error}</p>
               <button type="button" onClick={load} className="btn-ghost mt-6">
                 try again
               </button>
@@ -206,15 +206,15 @@ export default function Movies() {
 
           {status === 'ready' && filtered.length === 0 && (
             <div className="glass rounded-3xl px-6 py-14 text-center">
-              <div aria-hidden="true" className="mb-4 text-3xl text-rose/50">
+              <div aria-hidden="true" className="mb-4 text-3xl text-gold/75">
                 ❦
               </div>
-              <p className="font-display text-2xl text-cream">
+              <p className="font-display text-2xl text-ink">
                 {items.length === 0
                   ? 'Our corner is empty — for now.'
                   : 'Nothing matches that, my love.'}
               </p>
-              <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-cream/50">
+              <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-ink/55">
                 {items.length === 0
                   ? 'The first film we watch here should be one that makes you feel held. Add it, and it will be waiting for you.'
                   : 'Try another word, or a different mood. I am happy to be wrong about genres.'}
@@ -235,14 +235,14 @@ export default function Movies() {
                   <Link
                     key={`${item.kind}-${item.id}`}
                     to={isSeries ? `/series/${item.id}` : `/watch/${item.id}`}
-                    className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-rose/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
+                    className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
                   >
                     <div className="relative">
                       <Poster movie={item} className="aspect-[2/3]" />
                       {!isSeries && filmProgress[item.id] && (
-                        <div className="absolute inset-x-0 bottom-0 h-1 bg-black/60">
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-ink/15">
                           <div
-                            className="h-full bg-rose/80"
+                            className="h-full bg-gold"
                             style={{
                               width: `${Math.round(progressRatio(filmProgress[item.id]) * 100)}%`,
                             }}
@@ -250,16 +250,16 @@ export default function Movies() {
                         </div>
                       )}
                       {isSeries && (
-                        <span className="absolute left-3 top-3 rounded-full border border-rose/40 bg-ink/85 px-2.5 py-1 text-[8px] uppercase tracking-[0.24em] text-rose-soft backdrop-blur">
+                        <span className="absolute left-3 top-3 rounded-full border border-gold/45 bg-white/95 px-2.5 py-1 text-[8px] uppercase tracking-[0.24em] text-gold-deep backdrop-blur">
                           series
                         </span>
                       )}
                     </div>
                     <div className="mt-3">
-                      <h2 className="font-display text-[17px] leading-tight text-cream transition group-hover:text-rose-soft">
+                      <h2 className="font-display text-[17px] leading-tight text-ink transition group-hover:text-gold-deep">
                         {item.title}
                       </h2>
-                      <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-cream/35">
+                      <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-ink/40">
                         {isSeries
                           ? `series · ${item.episode_count} ${
                               item.episode_count === 1 ? 'episode' : 'episodes'

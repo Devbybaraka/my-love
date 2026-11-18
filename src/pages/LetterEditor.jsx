@@ -75,11 +75,11 @@ export default function LetterEditor() {
             onSubmit={unlock}
             className="glass w-full max-w-sm animate-fade-up rounded-3xl p-8 text-center"
           >
-            <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-full border border-rose/30 bg-rose/10 text-rose-soft">
+            <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-full border border-gold/30 bg-blush-soft text-gold-deep">
               ♥
             </div>
-            <h1 className="font-display text-3xl text-cream">Just for me.</h1>
-            <p className="mx-auto mt-3 max-w-[16rem] text-sm leading-relaxed text-cream/45">
+            <h1 className="font-display text-3xl text-ink">Just for me.</h1>
+            <p className="mx-auto mt-3 max-w-[16rem] text-sm leading-relaxed text-ink/50">
               This is where I rewrite her letter. Say the word we picked.
             </p>
             <input
@@ -95,7 +95,7 @@ export default function LetterEditor() {
             </button>
             <Link
               to="/"
-              className="mt-5 inline-block text-[10px] uppercase tracking-[0.26em] text-cream/30 hover:text-cream/70"
+              className="mt-5 inline-block text-[10px] uppercase tracking-[0.26em] text-ink/35 hover:text-ink/70"
             >
               back to the letter
             </Link>
@@ -113,12 +113,12 @@ export default function LetterEditor() {
           the letter
           <span className="h-px w-12 bg-gradient-to-r from-gold/60 to-transparent" />
         </p>
-        <h1 className="font-display text-[clamp(2.1rem,6vw,3.2rem)] leading-tight text-cream">
+        <h1 className="font-display text-[clamp(2.1rem,6vw,3.2rem)] leading-tight text-ink">
           Change what she reads
         </h1>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-cream/50">
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink/55">
           Leave a blank line between paragraphs. Wrap any words in{' '}
-          <span className="text-rose-soft">*asterisks*</span> to make them rose
+          <span className="text-gold-deep">*asterisks*</span> to make them rose
           italic, like a whisper. Save and the letter page updates straight away.
         </p>
 
@@ -150,7 +150,7 @@ export default function LetterEditor() {
                 className="field resize-y font-display text-[16px] leading-[1.85]"
                 placeholder="Write it the way you'd say it…"
               />
-              <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-cream/25">
+              <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-ink/30">
                 {paragraphs.length} paragraph{paragraphs.length === 1 ? '' : 's'}
               </p>
             </div>
@@ -183,7 +183,7 @@ export default function LetterEditor() {
             </div>
 
             {error && (
-              <p className="rounded-2xl border border-rose/30 bg-rose/10 px-4 py-3 text-sm text-rose-soft">
+              <p className="rounded-2xl border border-gold/30 bg-blush-soft px-4 py-3 text-sm text-gold-deep">
                 {error}
               </p>
             )}
@@ -198,20 +198,20 @@ export default function LetterEditor() {
               </button>
               <Link
                 to="/"
-                className="text-[10px] uppercase tracking-[0.24em] text-cream/35 hover:text-cream"
+                className="text-[10px] uppercase tracking-[0.24em] text-ink/40 hover:text-ink"
               >
                 read it
               </Link>
               <Link
                 to="/upload"
-                className="text-[10px] uppercase tracking-[0.24em] text-cream/35 hover:text-cream"
+                className="text-[10px] uppercase tracking-[0.24em] text-ink/40 hover:text-ink"
               >
                 add a film
               </Link>
             </div>
 
             {status === 'saved' && (
-              <p className="rounded-2xl border border-rose/25 bg-rose/[0.07] px-4 py-3 text-sm text-cream/70">
+              <p className="rounded-2xl border border-gold/25 bg-blush-soft px-4 py-3 text-sm text-ink/70">
                 Saved. The letter has been updated
                 {updatedAt ? ` (${new Date(updatedAt).toLocaleString()})` : ''}.
               </p>
@@ -220,25 +220,25 @@ export default function LetterEditor() {
 
           <aside className="space-y-4">
             <div className="glass rounded-3xl p-6">
-              <p className="text-[9px] uppercase tracking-[0.3em] text-cream/35">
+              <p className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                 how it will read
               </p>
-              <p className="mt-4 font-display text-lg italic text-rose-soft">
+              <p className="mt-4 font-display text-lg italic text-gold-deep">
                 {letter.salutation || 'My dearest,'}
               </p>
-              <p className="mt-2 line-clamp-[10] whitespace-pre-line font-display text-[14px] leading-relaxed text-cream/60">
+              <p className="mt-2 line-clamp-[10] whitespace-pre-line font-display text-[14px] leading-relaxed text-ink/60">
                 {(paragraphs[0] || '').replace(/\*/g, '')}
               </p>
-              <p className="mt-4 font-hand text-xl text-rose/80">
+              <p className="mt-4 font-hand text-xl text-blush-deep">
                 {letter.signature || 'always yours, Newton'}
               </p>
             </div>
 
-            <div className="rounded-3xl border border-white/5 p-5">
-              <p className="text-[9px] uppercase tracking-[0.3em] text-gold/70">
+            <div className="rounded-3xl border border-ink/[0.06] p-5">
+              <p className="text-[9px] uppercase tracking-[0.3em] text-gold/85">
                 a small note
               </p>
-              <p className="mt-3 font-hand text-xl leading-snug text-cream/70">
+              <p className="mt-3 font-hand text-xl leading-snug text-ink/70">
                 She opens this page first. Make the first line count.
               </p>
             </div>
